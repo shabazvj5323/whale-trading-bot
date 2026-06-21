@@ -84,22 +84,15 @@ def get_position(symbol):
 
 # Bypassing Cloud Blockers: Dynamic Mapping for CryptoCompare Engine
 def get_market_data(symbol):
-    if "BTC" in symbol: fsym = "BTC"
-    elif "ETH" in symbol: fsym = "ETH"
-    elif "XAU" in symbol: fsym = "XAU"
-    elif "XAG" in symbol: fsym = "XAG"
-    else: fsym = symbol.replace("USDT", "")
-
     try:
-        r = requests.get(f"{DATA_URL}?fsym={fsym}&tsym=USDT&limit=60", timeout=10)
+        r = requests.get(f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval=15m&limit=60", timeout=10)
         if r.status_code == 200:
-            raw_data = r.json().get("Data", {}).get("Data", [])
-            if raw_data:
-                candles = [{"o": float(c["open"]), "h": float(c["high"]), "l": float(c["low"]), "c": float(c["close"]), "v": float(c["volumeto"])} for c in raw_data]
-                return candles, candles[-1]["c"]
+            candles = [{"o": float(k[1]), "h": float(k[2]), "l": float(k[3]), "c": float(k[4]), "v": float(k[5])} for k in r.json()]
+            return candles, candles[-1]["c"]
     except Exception as e:
-        log.error(f"Bypass Telemetry Failed for {symbol}: {str(e)}")
+        log.error(f"Binance Telemetry Failed for {symbol}: {str(e)}")
     return None, None
+    
 
 # UPDATED: Precision rules handling for Commodities and Crypto Assets
 def format_precision(symbol, price, qty):
