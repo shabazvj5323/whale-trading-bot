@@ -1,37 +1,40 @@
 import os
-import requests
 import logging
 import time
+import yfinance as yf
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
 
-# --- AAPKI ORIGINAL STRATEGY PARAMETERS ---
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT"] # XAU ki jagah PAXG (Gold Token)
+# --- AAPKI ORIGINAL STRATEGY PARAMETERS (NO CHANGE) ---
+# Mapping tickers directly to Yahoo Finance Stable feeds
+TICKERS = {
+    "BTCUSDT": "BTC-USD",
+    "ETHUSDT": "ETH-USD",
+    "XAUUSDT": "GC=F",   # Gold Futures
+    "XAGUSDT": "SI=F"    # Silver Futures
+}
 VOLUME_MULTIPLIER = 2.5  
 RSI_PERIOD = 14
 
-def get_market_data(symbol):
+def get_market_data(ticker_symbol):
     try:
-        # Bybit Public API - GitHub Actions par 100% open aur unblocked hai
-        url = f"https://api.bybit.com/v5/market/kline?category=linear&symbol={symbol}&interval=15&limit=60"
-        r = requests.get(url, timeout=10)
+        # Fetching 15m intervals data via unblocked Yahoo Network
+        ticker = yf.Ticker(ticker_symbol)
+        df = ticker.history(period="2d", interval="15m")
         
-        if r.status_code == 200:
-            data = r.json().get("result", {}).get("list", [])
-            if not data: return None, None
+        if df.empty or len(df) < 30: 
+            return None, None
             
-            # Bybit response ko format kar rahe hain aapki strategy ke liye
-            # Bybit returns: [start_time, open, high, low, close, volume, turnover]
-            candles = []
-            for k in reversed(data): # Bybit data ulta deta hai, isliye reverse kiya
-                candles.append({
-                    "o": float(k[1]), "h": float(k[2]),
-                    "l": float(k[3]), "c": float(k[4]), "v": float(k[5])
-                })
-            return candles, candles[-1]["c"]
+        candles = []
+        for index, row in df.iterrows():
+            candles.append({
+                "o": float(row['Open']), "h": float(row['High']),
+                "l": float(row['Low']), "c": float(row['Close']), "v": float(row['Volume'])
+            })
+        return candles, candles[-1]["c"]
     except Exception as e:
-        log.error(f"Data fetch error: {str(e)}")
+        log.error(f"Yahoo Feed Fetch Error: {str(e)}")
     return None, None
 
 def calculate_rsi(prices, period=14):
@@ -54,7 +57,7 @@ def extract_institutional_signals(candles):
     avg_volume = sum(volumes[-21:-1]) / 20
     rsi = calculate_rsi(closes, RSI_PERIOD)
     
-    # Original Breakout Logic
+    # Core Strategy Logic (Exactly Same)
     volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
     
     if volume_breakout and closes[-1] > closes[-2] and rsi < 70: return "BUY", rsi
@@ -62,13 +65,13 @@ def extract_institutional_signals(candles):
     return "WAIT", rsi
 
 if __name__ == "__main__":
-    log.info("WhaleTrader Pro V4 Engine Booted. GitHub Workflow Sync Live.")
-    for symbol in SYMBOLS:
-        log.info(f"--- Evaluating Matrix Array: {symbol} ---")
-        candles, price = get_market_data(symbol)
+    log.info("WhaleTrader Pro V4 Engine Booted. Data Bridge active.")
+    for display_name, yahoo_ticker in TICKERS.items():
+        log.info(f"--- Evaluating Matrix Array: {display_name} ---")
+        candles, price = get_market_data(yahoo_ticker)
         if candles:
             signal, rsi = extract_institutional_signals(candles)
-            log.info(f"{symbol} Live Price: {price} | RSI: {round(rsi, 2)} | AI Signal: {signal}")
+            log.info(f"{display_name} Live Price: {round(price, 2)} | RSI: {round(rsi, 2)} | Signal: {signal}")
         else:
-            log.warning(f"Telemetry stream dropped for {symbol}.")
+            log.error(f"Data stream unavailable for {display_name}")
             
