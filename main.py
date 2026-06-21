@@ -6,31 +6,28 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
 
-# --- CORE PARAMETERS (NO CHANGES TO YOUR LOGIC) ---
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT"]
+# --- CORE PARAMETERS (AAPKI PAHILIE WALI STRATEGY) ---
+SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT"] 
 VOLUME_MULTIPLIER = 2.5  
 RSI_PERIOD = 14
 
 def get_market_data(symbol):
     try:
-        # Standard unblocked global crypto network data nodes
-        url = f"https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=bitcoin,ethereum,pax-gold,solana"
-        if "BTC" in symbol or "ETH" in symbol:
-            # Secondary ultra-stable failover architecture map
-            url = f"https://api.coincap.io/v2/assets"
-            r = requests.get(url, timeout=12)
-            if r.status_code == 200:
-                data = r.json().get("data", [])
-                for asset in data:
-                    if asset['symbol'] == symbol.replace("USDT", ""):
-                        # Synthetic structure generation for calculations
-                        price = float(asset['priceUsd'])
-                        volume = float(asset['volumeUsd24Hr'])
-                        # Creating historical matrix fallback arrays
-                        candles = [{"o": price, "h": price, "l": price, "c": price, "v": volume} for _ in range(30)]
-                        return candles, price
+        # Mexc Public API - GitHub Actions par 100% open aur working hai
+        url = f"https://api.mexc.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        
+        r = requests.get(url, headers=headers, timeout=15)
+        if r.status_code == 200:
+            candles = []
+            for k in r.json():
+                candles.append({
+                    "o": float(k[1]), "h": float(k[2]),
+                    "l": float(k[3]), "c": float(k[4]), "v": float(k[5])
+                })
+            return candles, candles[-1]["c"]
     except Exception as e:
-        log.error(f"Network node routing drop: {str(e)}")
+        log.error(f"Network Connection Drop: {str(e)}")
     return None, None
 
 def calculate_rsi(prices, period=14):
@@ -53,6 +50,7 @@ def extract_institutional_signals(candles):
     avg_volume = sum(volumes[-21:-1]) / 20
     rsi = calculate_rsi(closes, RSI_PERIOD)
     
+    # Same Original Breakout Strategy
     volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
     
     if volume_breakout and closes[-1] > closes[-2] and rsi < 70: return "BUY", rsi
@@ -60,15 +58,13 @@ def extract_institutional_signals(candles):
     return "WAIT", rsi
 
 if __name__ == "__main__":
-    log.info("WhaleTrader Pro V4 Engine Booted. Safe Cloud Sync Engaged.")
+    log.info("WhaleTrader Pro V4 Engine Booted. GitHub cloud stream active.")
     for symbol in SYMBOLS:
         log.info(f"--- Evaluating Matrix Array: {symbol} ---")
         candles, price = get_market_data(symbol)
         if candles:
             signal, rsi = extract_institutional_signals(candles)
-            log.info(f"{symbol} Matrix Price: {price} | RSI: {round(rsi, 2)} | Engine Signal: {signal}")
+            log.info(f"{symbol} Price: {price} | RSI: {round(rsi, 2)} | Signal: {signal}")
         else:
-            # Self-healing array block to bypass strict GitHub enterprise limits
-            mock_price = 64250.0 if "BTC" in symbol else 3450.0 if "ETH" in symbol else 2320.0 if "PAXG" in symbol else 142.0
-            log.info(f"{symbol} Core Price: {mock_price} | RSI: 48.5 | Engine Signal: WAIT (Secure Fallback)")
+            log.error(f"Critical data drop for {symbol}")
             
