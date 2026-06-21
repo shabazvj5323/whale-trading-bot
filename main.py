@@ -8,14 +8,12 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
 
-# --- CORE PARAMETERS (PAHILE WALI STRATEGY) ---
 SYMBOLS = ["BTCUSDT", "ETHUSDT", "XAUUSDT", "XAGUSDT"]
 VOLUME_MULTIPLIER = 2.5  
 RSI_PERIOD = 14
 
 def get_market_data(symbol):
     try:
-        # Fixed Binance Native Endpoint (No Drop)
         url = f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval=15m&limit=60"
         r = requests.get(url, timeout=10)
         if r.status_code == 200:
@@ -32,12 +30,8 @@ def get_market_data(symbol):
 
 def calculate_rsi(prices, period=14):
     if len(prices) < period: return 50
-    gains = []
-    losses = []
-    for i in range(1, len(prices)):
-        diff = prices[i] - prices[i-1]
-        gains.append(max(diff, 0))
-        losses.append(max(-diff, 0))
+    gains = [max(prices[i] - prices[i-1], 0) for i in range(1, len(prices))]
+    losses = [max(prices[i-1] - prices[i], 0) for i in range(1, len(prices))]
     avg_gain = sum(gains[:period]) / period
     avg_loss = sum(losses[:period]) / period
     if avg_loss == 0: return 100
@@ -50,18 +44,13 @@ def calculate_rsi(prices, period=14):
 def extract_institutional_signals(candles):
     closes = [c["c"] for c in candles]
     volumes = [c["v"] for c in candles]
-    
     current_volume = volumes[-1]
     avg_volume = sum(volumes[-21:-1]) / 20
     rsi = calculate_rsi(closes, RSI_PERIOD)
-    
-    # High-Volume Breakout Core Logic
     volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
     
-    if volume_breakout and closes[-1] > closes[-2] and rsi < 70:
-        return "BUY", rsi
-    elif volume_breakout and closes[-1] < closes[-2] and rsi > 30:
-        return "SELL", rsi
+    if volume_breakout and closes[-1] > closes[-2] and rsi < 70: return "BUY", rsi
+    elif volume_breakout and closes[-1] < closes[-2] and rsi > 30: return "SELL", rsi
     return "WAIT", rsi
 
 if __name__ == "__main__":
