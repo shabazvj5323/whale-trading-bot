@@ -1,46 +1,37 @@
 import os
 import requests
 import logging
-import hmac
-import hashlib
 import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
 
-# --- CORE PARAMETERS (AAPKI PAHILIE WALI STRATEGY) ---
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "XAUUSDT", "XAGUSDT"]
+# --- AAPKI ORIGINAL STRATEGY PARAMETERS ---
+SYMBOLS = ["BTCUSDT", "ETHUSDT", "PAXGUSDT", "SOLUSDT"] # XAU ki jagah PAXG (Gold Token)
 VOLUME_MULTIPLIER = 2.5  
 RSI_PERIOD = 14
 
 def get_market_data(symbol):
     try:
-        # Using a reliable public alternative API endpoint to bypass GitHub server bans
-        url = f"https://api1.binance.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        # Bybit Public API - GitHub Actions par 100% open aur unblocked hai
+        url = f"https://api.bybit.com/v5/market/kline?category=linear&symbol={symbol}&interval=15&limit=60"
+        r = requests.get(url, timeout=10)
         
-        r = requests.get(url, headers=headers, timeout=12)
         if r.status_code == 200:
+            data = r.json().get("result", {}).get("list", [])
+            if not data: return None, None
+            
+            # Bybit response ko format kar rahe hain aapki strategy ke liye
+            # Bybit returns: [start_time, open, high, low, close, volume, turnover]
             candles = []
-            for k in r.json():
+            for k in reversed(data): # Bybit data ulta deta hai, isliye reverse kiya
                 candles.append({
                     "o": float(k[1]), "h": float(k[2]),
                     "l": float(k[3]), "c": float(k[4]), "v": float(k[5])
                 })
             return candles, candles[-1]["c"]
-            
     except Exception as e:
-        log.error(f"Primary Fetch Failed: {str(e)}")
-        
-    # --- FALLBACK SEAMLESS LINK ---
-    try:
-        url = f"https://api2.binance.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
-        r = requests.get(url, timeout=12)
-        if r.status_code == 200:
-            candles = [{"o": float(k[1]), "h": float(k[2]), "l": float(k[3]), "c": float(k[4]), "v": float(k[5])} for k in r.json()]
-            return candles, candles[-1]["c"]
-    except:
-        pass
+        log.error(f"Data fetch error: {str(e)}")
     return None, None
 
 def calculate_rsi(prices, period=14):
@@ -63,7 +54,7 @@ def extract_institutional_signals(candles):
     avg_volume = sum(volumes[-21:-1]) / 20
     rsi = calculate_rsi(closes, RSI_PERIOD)
     
-    # Core Logic remains exactly as original
+    # Original Breakout Logic
     volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
     
     if volume_breakout and closes[-1] > closes[-2] and rsi < 70: return "BUY", rsi
@@ -71,13 +62,13 @@ def extract_institutional_signals(candles):
     return "WAIT", rsi
 
 if __name__ == "__main__":
-    log.info("WhaleTrader Pro V4 Engine Booted. Portfolio Tracking Engaged.")
+    log.info("WhaleTrader Pro V4 Engine Booted. GitHub Workflow Sync Live.")
     for symbol in SYMBOLS:
         log.info(f"--- Evaluating Matrix Array: {symbol} ---")
         candles, price = get_market_data(symbol)
         if candles:
             signal, rsi = extract_institutional_signals(candles)
-            log.info(f"{symbol} Price: {price} | RSI: {round(rsi, 2)} | Signal: {signal}")
+            log.info(f"{symbol} Live Price: {price} | RSI: {round(rsi, 2)} | AI Signal: {signal}")
         else:
-            log.error(f"Data interface critical drop for {symbol}")
+            log.warning(f"Telemetry stream dropped for {symbol}.")
             
