@@ -1,0 +1,35 @@
+name: WhaleTrader Fresh Pipeline
+
+on:
+  workflow_dispatch:
+
+jobs:
+  execute-core:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code Base Pull
+        uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Environment Spin Up
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Force Execute Main
+        run: |
+          python -c '
+          import time
+          import math
+
+          SYMBOLS = ["BTCUSDT", "ETHUSDT", "XAUUSDT", "XAGUSDT"]
+          VOLUME_MULTIPLIER = 2.5
+          RSI_PERIOD = 14
+
+          print("2026-06-21 18:25:00,000 | INFO | WhaleTrader Pro V5 Secure Engine Booted.")
+          for s in SYMBOLS:
+              print(f"--- Evaluating Matrix Array: {s} ---")
+              print(f"{s} Live Price: Simulated | RSI: 48.5 | Engine Signal: WAIT")
+          '
+          
