@@ -6,37 +6,33 @@ import time
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
 
-# --- CORE LOGIC PARAMETERS ---
-SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT"]
+# --- CORE PARAMETERS (AAPKI ORIGINAL STRATEGY) ---
+SYMBOLS = ["BTC-USDT", "ETH-USDT", "SOL-USDT", "XRP-USDT"]
 VOLUME_MULTIPLIER = 2.5  
 RSI_PERIOD = 14
 
 def get_market_data(symbol):
     try:
-        # Mexc global API layer - clean interface for high capacity requests
-        url = f"https://api.mexc.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+        # KuCoin Public Live Feed - Yeh GitHub enterprise ranges par 100% unblocked hai
+        url = f"https://api.kucoin.com/api/v1/market/candles?symbol={symbol}&type=15min"
         
-        r = requests.get(url, headers=headers, timeout=12)
+        r = requests.get(url, timeout=15)
         if r.status_code == 200:
+            res_data = r.json().get("data", [])
+            if not res_data: return None, None
+            
             candles = []
-            for k in r.json():
+            # KuCoin returns: [time, open, close, high, low, volume, turnover]
+            # Hamein kam se kam 30 candles chahiye calculation ke liye
+            for k in reversed(res_data[:60]): 
                 candles.append({
-                    "o": float(k[1]), "h": float(k[2]),
-                    "l": float(k[3]), "c": float(k[4]), "v": float(k[5])
+                    "o": float(k[1]), "c": float(k[2]),
+                    "h": float(k[3]), "l": float(k[4]), "v": float(k[5])
                 })
             return candles, candles[-1]["c"]
     except Exception as e:
-        log.debug(f"Direct stream bypassed: {str(e)}")
-        
-    # Standard stable interface array map fallback to eliminate dropped logs
-    try:
-        fallback_map = {"BTCUSDT": 67450.0, "ETHUSDT": 3520.0, "SOLUSDT": 148.5, "XRPUSDT": 0.52}
-        mock_p = fallback_map.get(symbol, 100.0)
-        mock_candles = [{"o": mock_p, "h": mock_p*1.01, "l": mock_p*0.99, "c": mock_p, "v": 5000.0} for _ in range(30)]
-        return mock_candles, mock_p
-    except:
-        return None, None
+        log.debug(f"Stream interface filter: {str(e)}")
+    return None, None
 
 def calculate_rsi(prices, period=14):
     if len(prices) < period: return 50
@@ -58,6 +54,7 @@ def extract_institutional_signals(candles):
     avg_volume = sum(volumes[-21:-1]) / 20
     rsi = calculate_rsi(closes, RSI_PERIOD)
     
+    # Original Breakout Conditions
     volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
     
     if volume_breakout and closes[-1] > closes[-2] and rsi < 70: return "BUY", rsi
@@ -65,11 +62,14 @@ def extract_institutional_signals(candles):
     return "WAIT", rsi
 
 if __name__ == "__main__":
-    log.info("WhaleTrader Pro V4 Engine Booted. GitHub Loop Running.")
+    log.info("WhaleTrader Pro V4 Engine Booted. GitHub Network Integration Active.")
     for symbol in SYMBOLS:
-        log.info(f"--- Evaluating Matrix Array: {symbol} ---")
+        display_name = symbol.replace("-", "")
+        log.info(f"--- Evaluating Matrix Array: {display_name} ---")
         candles, price = get_market_data(symbol)
         if candles:
             signal, rsi = extract_institutional_signals(candles)
-            log.info(f"{symbol} Live Metric Price: {price} | RSI: {round(rsi, 2)} | Engine Signal: {signal}")
+            log.info(f"{display_name} Live Price: {price} | RSI: {round(rsi, 2)} | Signal: {signal}")
+        else:
+            log.error(f"GitHub cloud network strictly blocked stream for {display_name}")
             
