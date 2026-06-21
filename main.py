@@ -23,7 +23,7 @@ BINANCE_API_KEY  = os.environ.get("BINANCE_API_KEY", "")
 BINANCE_SECRET   = os.environ.get("BINANCE_SECRET_KEY", "")
 
 # 100% Free Public Aggregator (Bypasses Binance Cloudflare Block on GitHub/Railway)
-DATA_URL  = "https://min-api.cryptocompare.com/data/v2/histominute"
+DATA_URL = "https://fapi.binance.com/fapi/v1/klines"
 DEMO_URL  = "https://testnet.binancefuture.com"  # Tight Order Execution Layer
 
 # UPDATED: Added Gold (XAUUSDT) and Silver (XAGUSDT)
