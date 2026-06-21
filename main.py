@@ -1,9 +1,9 @@
 import os
-import requests
 import logging
 import hmac
 import hashlib
 import time
+import cloudscraper
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(message)s')
 log = logging.getLogger("WhaleTrader")
@@ -14,11 +14,11 @@ RSI_PERIOD = 14
 
 def get_market_data(symbol):
     try:
-        # Added generic headers to prevent GitHub Actions runner blocking
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-        url = f"https://fapi.binance.com/fapi/v1/klines?symbol={symbol}&interval=15m&limit=60"
+        # Cloudscraper creates an automatic bypass session
+        scraper = cloudscraper.create_scraper()
+        url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
         
-        r = requests.get(url, headers=headers, timeout=10)
+        r = scraper.get(url, timeout=15)
         if r.status_code == 200:
             candles = []
             for k in r.json():
@@ -27,15 +27,8 @@ def get_market_data(symbol):
                     "l": float(k[3]), "c": float(k[4]), "v": float(k[5])
                 })
             return candles, candles[-1]["c"]
-        else:
-            # Fallback public api endpoint
-            fallback_url = f"https://api.binance.com/api/v3/klines?symbol={symbol}&interval=15m&limit=60"
-            r = requests.get(fallback_url, headers=headers, timeout=10)
-            if r.status_code == 200:
-                candles = [{"o": float(k[1]), "h": float(k[2]), "l": float(k[3]), "c": float(k[4]), "v": float(k[5])} for k in r.json()]
-                return candles, candles[-1]["c"]
     except Exception as e:
-        log.error(f"Network error: {str(e)}")
+        log.error(f"Bypass Error: {str(e)}")
     return None, None
 
 def calculate_rsi(prices, period=14):
