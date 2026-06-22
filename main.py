@@ -6,7 +6,7 @@ import ccxt
 import numpy as np
 from datetime import datetime, timedelta
 
-# --- WAHI PURANI STRATEGY ---
+# --- WAHI ORIGINAL STRATEGY ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 log = logging.getLogger("WhaleTrader_Pro_Quant")
 
@@ -67,7 +67,7 @@ class WhaleQuantEngine:
         rsi, up, sma, low, atr = self.calculate_indicators(closes, highs, lows)
         curr = closes[-1]
         
-        # WAHI SCALPING STRATEGY LOGIC
+        # WAHI SCALPING STRATEGY
         if symbol not in self.state["active_positions"]:
             if curr <= low: 
                 self.state["active_positions"][symbol] = {"side": "buy", "entry": curr, "tp": curr*1.015, "sl": curr*0.995}
@@ -88,22 +88,26 @@ class WhaleQuantEngine:
         rows = "".join([f"<tr><td>{d['symbol']}</td><td>{d['signal']}</td><td>{d['rsi']}</td><td>{d['entry']}</td></tr>" for d in self.dashboard_data])
         hist = "".join([f"<tr><td>{t['time']}</td><td>{t['symbol']}</td><td>{t['pnl']}</td></tr>" for t in self.state["trades"][-5:]])
         
-        # DASHBOARD MEIN TIMINGS ADDED
+        # PURANA LOOK + NAYI TIMINGS
         html = f"""<!DOCTYPE html>
 <html>
 <head>
 <style>
-    body {{ background: #08090c; color: white; font-family: monospace; padding: 20px; }}
-    table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
-    th, td {{ border: 1px solid #333; padding: 8px; text-align: left; }}
+    body {{ font-family: sans-serif; background-color: #08090c; color: #cbd5e1; padding: 20px; }}
+    .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }}
+    h1 {{ color: #ffffff; }}
+    table {{ width: 100%; border-collapse: collapse; background: #0b0d13; border: 1px solid #1e293b; }}
+    th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #1e293b; }}
 </style>
 </head>
 <body>
-    <h1>WhaleTrader Pro</h1>
-    <div style="background:#111; padding:10px; border-radius:5px;">
-        <div>Live Clock: <span id="clock" style="color:#00ff00;"></span></div>
-        <div>Last Sync Time: {now_str}</div>
-        <div id="timer" style="color: yellow; font-size: 20px; font-weight:bold;">Next Sync In: 15:00</div>
+    <div class="header">
+        <h1>WhaleTrader Pro Terminal</h1>
+        <div style="text-align:right;">
+            <div>Live: <span id="clock" style="color:white; font-weight:bold;">--:--:--</span></div>
+            <div>Last Sync: {now_str}</div>
+            <div id="timer" style="color:#f59e0b; font-weight:bold;">Next Sync In: 15:00</div>
+        </div>
     </div>
     <table><tr><th>Asset</th><th>Signal</th><th>RSI</th><th>Entry</th></tr>{rows}</table>
     <h3>Settlement Log</h3>
