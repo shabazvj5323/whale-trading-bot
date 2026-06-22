@@ -1,0 +1,13 @@
+{
+    "total_pnl": 0.0,
+    "active_positions": {
+        "ETH/USDT": {
+            "side": "sell",
+            "entry": 1204.25,
+            "tp": 316.94,
+            "sl": 1630.16,
+            "qty": 0.5
+        }
+    },
+    "trades": []
+}

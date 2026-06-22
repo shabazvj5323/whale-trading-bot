@@ -5,68 +5,71 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WhaleTrader Quant Live Terminal</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 15px; margin-bottom: 25px; }
-        h1 { color: #f0b90b; margin: 0; font-size: 24px; font-weight: 600; }
-        .time { color: #848e9c; font-size: 14px; }
-        table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        th, td { padding: 16px; text-align: left; border-bottom: 1px solid #2b3139; }
-        th { background-color: #1e2329; color: #848e9c; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
-        tr:hover { background-color: #1f2630; }
-        .price-text { font-family: monospace; font-size: 16px; font-weight: bold; color: #ffffff; }
-        .signal-badge { padding: 6px 12px; border-radius: 4px; font-weight: bold; font-size: 12px; }
-        .wait { background-color: #2b3139; color: #eaecef; }
+        h1 { color: #f0b90b; margin: 0; font-size: 24px; }
+        .pnl-box { background: #1e2329; padding: 15px 25px; border-radius: 6px; text-align: center; margin-bottom: 25px; border: 1px solid #2b3139; }
+        table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 30px; overflow: hidden; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; }
+        th { background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; }
+        .price-text { font-family: monospace; font-size: 15px; font-weight: bold; }
+        .signal-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
+        .wait { background-color: #2b3139; color: #848e9c; }
         .buy-bg { background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }
         .sell-bg { background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }
-        .trending-badge { color: #f0b90b; font-weight: bold; }
-        .ranging-badge { color: #90caf9; font-weight: bold; }
-        footer { text-align: center; margin-top: 30px; color: #474d57; font-size: 12px; }
+        .trending-badge { color: #f0b90b; } .ranging-badge { color: #90caf9; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>🐋 WhaleTrader Quant Live Terminal</h1>
-            <div class="time">Last Core Scan: <b>2026-06-22 07:19:31 UTC</b></div>
+            <div style="color: #848e9c;">Last Scan: <b>2026-06-22 07:33:48 UTC</b></div>
         </header>
+        
+        <div class="pnl-box">
+            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Account P&L</span>
+            <h2 style="margin: 5px 0 0 0; color: #26a69a; font-size: 32px;">$0.0 USD</h2>
+        </div>
+
+        <h3>📡 Live Market Scan & Active Monitor</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Market Pair</th>
-                    <th>Current Price</th>
-                    <th>Regime Index</th>
-                    <th>RSI Momentum</th>
-                    <th>Execution Trigger</th>
-                    <th>Target (TP)</th>
-                    <th>Stop Loss (SL)</th>
+                    <th>Pair</th><th>Price</th><th>Regime Index</th><th>RSI</th><th>Status</th><th>Target TP</th><th>Stop SL</th>
                 </tr>
             </thead>
             <tbody>
-                
             <tr>
                 <td><b>BTC/USDT</b></td>
-                <td><span class='price-text'>$64030.29</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 29.88)</span></td>
-                <td>31.52</td>
-                <td><span class='signal-badge sell-bg'>SELL (Short Breakout)</span></td>
-                <td style='color: #26a69a;'>63677.03</td>
-                <td style='color: #ef5350;'>64199.86</td>
+                <td><span class='price-text'>$63710.05</span></td>
+                <td><span class='ranging-badge'>RANGING (ADX: 7.35)</span></td>
+                <td>35.79</td>
+                <td><span class='signal-badge wait'>STANDBY</span></td>
+                <td style='color: #26a69a;'>-</td>
+                <td style='color: #ef5350;'>-</td>
             </tr>
-            
             <tr>
                 <td><b>ETH/USDT</b></td>
-                <td><span class='price-text'>$3195.16</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 58.69)</span></td>
-                <td>26.13</td>
-                <td><span class='signal-badge sell-bg'>SELL (Short Breakout)</span></td>
-                <td style='color: #26a69a;'>2915.96</td>
-                <td style='color: #ef5350;'>3329.17</td>
-            </tr>
-            
-            </tbody>
+                <td><span class='price-text'>$1204.25</span></td>
+                <td><span class='trending-badge'>TRENDING (ADX: 76.48)</span></td>
+                <td>16.53</td>
+                <td><span class='signal-badge sell-bg'>SHORT Breakout</span></td>
+                <td style='color: #26a69a;'>316.94</td>
+                <td style='color: #ef5350;'>1630.16</td>
+            </tr></tbody>
         </table>
-        <footer>WhaleTrader Pro V5 • Pure Mathematical Intelligence Background Engine</footer>
+
+        <h3>📜 Closed Trades Ledger (P&L History)</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Close Time</th><th>Pair</th><th>Side</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Reason</th><th>Profit/Loss</th>
+                </tr>
+            </thead>
+            <tbody><tr><td colspan="7" style="text-align:center; color:#848e9c;">No closed transactions yet. System monitoring live targets...</td></tr></tbody>
+        </table>
     </div>
 </body>
 </html>
