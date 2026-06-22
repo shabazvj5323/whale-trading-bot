@@ -59,10 +59,13 @@ class WhaleQuantEngine:
                 with open(self.history_file, "r") as f:
                     data = json.load(f)
                 if "trades" in data:
-                    fresh_trades = [
-                        t for t in data["trades"] 
-                        if float(t.get("pnl", 0)) > -200.0 and ("Scalp" in t.get("result", "") or "TP" in t.get("result", ""))
-                    ]
+                    fresh_trades = []
+                    for t in data["trades"]:
+                        try:
+                            if float(t.get("pnl", 0)) > -200.0:
+                                fresh_trades.append(t)
+                        except:
+                            continue
                     data["trades"] = fresh_trades
                     data["total_pnl"] = sum(float(t.get("pnl", 0)) for t in fresh_trades)
                 if "active_positions" not in data: data["active_positions"] = {}
@@ -258,13 +261,15 @@ class WhaleQuantEngine:
                 </tr>"""
 
         history_rows = ""
-        reversed_trades = list(reversed(self.state.get("trades", [])))[:8]
+        trade_list = list(self.state.get("trades", []))
+        # Loop safety fix for empty/list iterator
+        reversed_trades = trade_list[::-1][:8]
         for t in reversed_trades:
-            t_color = "#00b574" if t["pnl"] >= 0 else "#ff3b30"
+            t_color = "#00b574" if float(t["pnl"]) >= 0 else "#ff3b30"
             badge_type = "history-buy" if t["side"] == "BUY" else "history-sell"
             history_rows += f"""
             <tr>
-                <td style='color: #4b5563;'>{t['time']}</td>
+                <td style='color: #64748b;'>{t['time']}</td>
                 <td><b>{t['symbol']}</b></td>
                 <td><span class='hist-pill {badge_type}'>{t['side']}</span></td>
                 <td>${t['entry']}</td>
@@ -311,7 +316,7 @@ class WhaleQuantEngine:
     <div class="container">
         <header>
             <h1>WhaleTrader Pro Terminal</h1>
-            <div style="color: #64748b; font-size: 12px;">Sync: <span>{now_str}</span></div>
+            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Sync: <span id="clock-sync">{now_str}</span></div>
         </header>
         
         <div class="matrix-container">
@@ -382,13 +387,15 @@ class WhaleQuantEngine:
         function startLiveClock() {{
             setInterval(() => {{
                 const now = new Date();
-                const options = {{ timeZone: "Asia/Kolkata", hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }};
-                const dateOptions = {{ timeZone: "Asia/Kolkata", year: 'numeric', month: '2-digit', day: '2-digit' }};
-                
+                const options = {{ hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }};
                 const timeStr = now.toLocaleTimeString('en-US', options);
-                const dateStr = now.toLocaleDateString('zh-Hans-CN', dateOptions).replace(/\//g, '-');
                 
-                const syncEl = document.querySelector("header div span");
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const dateStr = `${{year}}-${{month}}-${{day}}`;
+                
+                const syncEl = document.getElementById("clock-sync");
                 if (syncEl) {{
                     syncEl.innerText = dateStr + " " + timeStr;
                 }}
