@@ -3,134 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhaleTrader Pro Live Terminal</title>
+    <title>WhaleTrader Premium Terminal</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 15px; margin-bottom: 25px; }
-        h1 { color: #f0b90b; margin: 0; font-size: 24px; }
-        .pnl-box { background: #1e2329; padding: 15px 25px; border-radius: 6px; text-align: center; margin-bottom: 25px; border: 1px solid #2b3139; }
-        table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 35px; overflow: hidden; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; font-size: 14px; }
-        th { background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-        tr { transition: background-color 0.3s; }
-        tr:hover { background-color: #1f2630; }
-        .font-mono { font-family: monospace; font-size: 15px; font-weight: bold; }
-        .price-text { color: #ffffff; padding: 3px 6px; border-radius: 4px; }
-        .change-badge { padding: 3px 8px; border-radius: 4px; font-size: 13px; }
-        .text-up { color: #26a69a !important; }
-        .text-down { color: #ef5350 !important; }
-        .bg-up { background-color: rgba(38, 166, 154, 0.15); }
-        .bg-down { background-color: rgba(239, 83, 80, 0.15); }
-        .signal-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .buy-bg { background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }
-        .sell-bg { background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }
-        .trending-badge { color: #f0b90b; font-weight: bold; } .ranging-badge { color: #90caf9; font-weight: bold; }
-        h3 { color: #ffffff; font-weight: 500; border-left: 4px solid #f0b90b; padding-left: 10px; margin-bottom: 15px; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background-color: #060709; color: #dee4ec; margin: 0; padding: 25px; -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1250px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #141822; padding-bottom: 20px; margin-bottom: 30px; }
+        h1 { color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px; }
+        h1::before { content: ''; display: inline-block; width: 10px; height: 10px; background: #00b574; border-radius: 50%; box-shadow: 0 0 10px #00b574; }
+        .matrix-container { display: flex; gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #0e1118 0%, #121620 100%); border: 1px solid #1c2333; padding: 20px; border-radius: 12px; flex: 1; box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+        .stat-label { color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+        .stat-value { font-size: 28px; font-weight: 800; font-family: monospace; letter-spacing: -1px; }
+        table { width: 100%; border-collapse: collapse; background-color: #0b0d13; border-radius: 12px; margin-bottom: 35px; overflow: hidden; border: 1px solid #141822; box-shadow: 0 4px 25px rgba(0,0,0,0.3); }
+        th, td { padding: 16px; text-align: left; border-bottom: 1px solid #141822; font-size: 13px; }
+        th { background-color: #0f121a; color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; }
+        tr { transition: background-color 0.2s; }
+        tr:hover { background-color: #121622; }
+        .price-ticker { font-family: monospace; font-size: 15px; font-weight: bold; transition: color 0.2s; }
+        .badge-glow { font-family: monospace; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+        .text-up { color: #00b574 !important; } .text-down { color: #ff3b30 !important; }
+        .bg-up { background-color: rgba(0, 181, 116, 0.1); border: 1px solid rgba(0, 181, 116, 0.2); }
+        .bg-down { background-color: rgba(255, 59, 48, 0.1); border: 1px solid rgba(255, 59, 48, 0.2); }
+        .status-pill { padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 11px; letter-spacing: 0.5px; }
+        .buy-glow { background-color: rgba(0, 181, 116, 0.15); color: #00b574; border: 1px solid #00b574; box-shadow: 0 0 10px rgba(0,181,116,0.2); }
+        .sell-glow { background-color: rgba(255, 59, 48, 0.15); color: #ff3b30; border: 1px solid #ff3b30; box-shadow: 0 0 10px rgba(255,59,48,0.2); }
+        .hist-pill { padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
+        .history-buy { background: rgba(0,181,116,0.1); color: #00b574; }
+        .history-sell { background: rgba(255,59,48,0.1); color: #ff3b30; }
+        .badge-metric { color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 8px; border-radius: 6px; font-weight: 600; font-size: 12px; }
+        h3 { color: #ffffff; font-size: 15px; font-weight: 600; margin-bottom: 15px; letter-spacing: -0.3px; display: flex; align-items: center; gap: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🐋 WhaleTrader Pro Live Terminal</h1>
-            <div style="color: #848e9c;">Quantum Engine Last Scan: <b style="color: #f0b90b;">2026-06-22 02:04:22 PM (IST)</b></div>
+            <h1>WhaleTrader Quantum Engine Pro</h1>
+            <div style="color: #64748b; font-size: 13px; font-weight: 500;">Core Pulse: <span style="color: #ffffff; font-weight:600;">2026-06-22 02:45:28 PM (IST)</span></div>
         </header>
         
-        <div class="pnl-box">
-            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Portfolio Net P&L</span>
-            <h2 style="margin: 5px 0 0 0; color: #ef5350; font-size: 32px;">$-272.67 USD</h2>
+        <div class="matrix-container">
+            <div class="stat-card">
+                <div class="stat-label">Allocated Scalp Wallet</div>
+                <div class="stat-value" style="color: #ffffff;">$1,000.00 <span style="font-size:12px; color:#64748b; font-weight:500;">USD</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Margin Leverage</div>
+                <div class="stat-value" style="color: #f0b90b;">10x Isolated</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Realized Net Returns</div>
+                <div class="stat-value" style="color: #ff3b30;">$-3470.65</div>
+            </div>
         </div>
 
-        <h3>🟢 Active Orders & Streaming Price Monitor (Live)</h3>
+        <h3>🟢 Streaming Cross-Asset Spot & Futures Order Monitor</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Market Pair</th><th>Live Running Price</th><th>24h Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
+                    <th>Asset Pair</th><th>Live Running Price</th><th>24h Volatility Delta</th><th>Scalp Conditions</th><th>Trigger Entry</th><th>Execution State</th><th>Target TP</th><th>Protective SL</th>
                 </tr>
             </thead>
             <tbody>
             <tr id='row-btcusdt'>
-                <td><b>BTC/USDT</b></td>
-                <td><span id='price-btcusdt' class='price-text font-mono'>$0.00</span></td>
-                <td><span id='change-btcusdt' class='change-badge font-mono'>0.00 (0.00%)</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 91.29)</span></td>
-                <td>20.29</td>
-                <td><b>$64175.85</b></td>
-                <td><span class='signal-badge sell-bg'>HOLD SELL</span></td>
-                <td style='color: #26a69a; font-weight:bold;'>$63542.71</td>
-                <td style='color: #ef5350; font-weight:bold;'>$64479.76</td>
+                <td style='color: #ffffff; font-weight: 600;'>BTC/USDT</td>
+                <td><span id='price-btcusdt' class='price-ticker'>$0.00</span></td>
+                <td><span id='change-btcusdt' class='badge-glow'>0.00 (0.00%)</span></td>
+                <td><span class='badge-metric'>RSI: 69.91</span></td>
+                <td style='color: #c5d4e2; font-weight: bold;'>$66132.65</td>
+                <td><span class='status-pill sell-glow'>SCALPING SELL</span></td>
+                <td style='color: #00b574; font-weight:bold;'>$66065.82</td>
+                <td style='color: #ff3b30; font-weight:bold;'>$66177.2</td>
             </tr>
-            <tr id='row-ethusdt'>
-                <td><b>ETH/USDT</b></td>
-                <td><span id='price-ethusdt' class='price-text font-mono'>$0.00</span></td>
-                <td><span id='change-ethusdt' class='change-badge font-mono'>0.00 (0.00%)</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 34.76)</span></td>
-                <td>24.86</td>
-                <td><b>$392.19</b></td>
-                <td><span class='signal-badge sell-bg'>HOLD SELL</span></td>
-                <td style='color: #26a69a; font-weight:bold;'>$-649.13</td>
-                <td style='color: #ef5350; font-weight:bold;'>$892.02</td>
+            <tr id='row-paxgusdt'>
+                <td style='color: #ffffff; font-weight: 600;'>PAXG/USDT</td>
+                <td><span id='price-paxgusdt' class='price-ticker'>$0.00</span></td>
+                <td><span id='change-paxgusdt' class='badge-glow'>0.00 (0.00%)</span></td>
+                <td><span class='badge-metric'>RSI: 75.61</span></td>
+                <td style='color: #c5d4e2; font-weight: bold;'>$2343.41</td>
+                <td><span class='status-pill sell-glow'>SCALPING SELL</span></td>
+                <td style='color: #00b574; font-weight:bold;'>$2329.13</td>
+                <td style='color: #ff3b30; font-weight:bold;'>$2352.93</td>
             </tr></tbody>
         </table>
 
-        <h3>📜 Closed Trades Ledger (Real-Time History)</h3>
+        <h3>📜 High-Frequency Closed Settlement Log</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Execution Time</th><th>Market Pair</th><th>Direction</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Status</th><th>Net P&L ($)</th>
+                    <th>Timestamp</th><th>Asset Pair</th><th>Action Vector</th><th>Entry Price</th><th>Exit Settlement</th><th>Trigger Output</th><th>Net Realized Margin</th>
                 </tr>
             </thead>
             <tbody>
             <tr>
-                <td>2026-06-22 14:04 IST</td>
+                <td style='color: #8492a6;'>2026-06-22 14:45</td>
+                <td><b>ETH/USDT</b></td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
+                <td>$392.19</td>
+                <td>$892.02</td>
+                <td><span style='color:#ff3b30; font-weight:600;'>Scalp SL 🛑</span></td>
+                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-3186.15 USD</td>
+            </tr>
+            <tr>
+                <td style='color: #8492a6;'>2026-06-22 14:45</td>
                 <td><b>BTC/USDT</b></td>
-                <td>SELL</td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
+                <td>$64175.85</td>
+                <td>$64479.76</td>
+                <td><span style='color:#ff3b30; font-weight:600;'>Scalp SL 🛑</span></td>
+                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-11.84 USD</td>
+            </tr>
+            <tr>
+                <td style='color: #8492a6;'>2026-06-22 14:04</td>
+                <td><b>BTC/USDT</b></td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
                 <td>$66014.52</td>
                 <td>$65124.76</td>
-                <td><span style='color:#26a69a'>TP Hit 🎯</span></td>
-                <td style='color: #26a69a; font-weight: bold;'>$44.49 USD</td>
+                <td><span style='color:#00b574; font-weight:600;'>TP Hit 🎯</span></td>
+                <td style='color: #00b574; font-weight: bold; font-family: monospace;'>$44.49 USD</td>
             </tr>
             <tr>
-                <td>2026-06-22 13:48 IST</td>
+                <td style='color: #8492a6;'>2026-06-22 13:48</td>
                 <td><b>ETH/USDT</b></td>
-                <td>SELL</td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
                 <td>$3412.8</td>
                 <td>$3571.25</td>
-                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
-                <td style='color: #ef5350; font-weight: bold;'>$-79.22 USD</td>
+                <td><span style='color:#ff3b30; font-weight:600;'>SL Hit 🛑</span></td>
+                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-79.22 USD</td>
             </tr>
             <tr>
-                <td>2026-06-22 13:48 IST</td>
+                <td style='color: #8492a6;'>2026-06-22 13:48</td>
                 <td><b>BTC/USDT</b></td>
-                <td>SELL</td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
                 <td>$63745.12</td>
                 <td>$64244.66</td>
-                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
-                <td style='color: #ef5350; font-weight: bold;'>$-24.98 USD</td>
+                <td><span style='color:#ff3b30; font-weight:600;'>SL Hit 🛑</span></td>
+                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-24.98 USD</td>
             </tr>
             <tr>
-                <td>2026-06-22 13:09 IST</td>
+                <td style='color: #8492a6;'>2026-06-22 13:09</td>
                 <td><b>ETH/USDT</b></td>
-                <td>SELL</td>
+                <td><span class='hist-pill history-sell'>SELL</span></td>
                 <td>$1204.25</td>
                 <td>$1630.16</td>
-                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
-                <td style='color: #ef5350; font-weight: bold;'>$-212.96 USD</td>
+                <td><span style='color:#ff3b30; font-weight:600;'>SL Hit 🛑</span></td>
+                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-212.96 USD</td>
             </tr></tbody>
         </table>
     </div>
 
     <script>
-        const symbols = ['btcusdt', 'ethusdt'];
-        
+        const symbols = ['btcusdt', 'ethusdt', 'paxgusdt'];
         function connectLiveTicker() {
             const wsUrl = "wss://stream.binance.com:9443/ws/" + symbols.map(s => s + "@ticker").join("/");
             const ws = new WebSocket(wsUrl);
-            
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
                 const sym = data.s.toLowerCase();
-                
                 const priceEl = document.getElementById("price-" + sym);
                 const changeEl = document.getElementById("change-" + sym);
                 
@@ -138,26 +166,20 @@
                     const price = parseFloat(data.c).toFixed(2);
                     const changeAmt = parseFloat(data.p).toFixed(2);
                     const changePct = parseFloat(data.P).toFixed(2);
-                    
                     priceEl.innerText = "$" + price;
-                    
                     if (parseFloat(changePct) >= 0) {
                         changeEl.innerText = "+" + changeAmt + " (+" + changePct + "%)";
-                        changeEl.className = "change-badge font-mono text-up bg-up";
-                        priceEl.className = "price-text font-mono text-up";
+                        changeEl.className = "badge-glow text-up bg-up";
+                        priceEl.className = "price-ticker text-up";
                     } else {
                         changeEl.innerText = changeAmt + " (" + changePct + "%)";
-                        changeEl.className = "change-badge font-mono text-down bg-down";
-                        priceEl.className = "price-text font-mono text-down";
+                        changeEl.className = "badge-glow text-down bg-down";
+                        priceEl.className = "price-ticker text-down";
                     }
                 }
             };
-            
-            ws.onclose = () => {
-                setTimeout(connectLiveTicker, 5000);
-            };
+            ws.onclose = () => { setTimeout(connectLiveTicker, 4000); };
         }
-        
         connectLiveTicker();
         setTimeout(() => { window.location.reload(); }, 300000);
     </script>
