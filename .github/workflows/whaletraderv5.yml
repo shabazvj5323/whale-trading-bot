@@ -3,7 +3,12 @@ name: WhaleTrader Automated Demo Pipeline
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'  # Har 15 minute mein background automatic run
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
 
 jobs:
   execute-core:
@@ -30,4 +35,10 @@ jobs:
           BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
         run: |
           python main.py
+
+      - name: Deploy Live Dashboard to GitHub Pages
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "System Engine: Auto-Updated Live Quant Dashboard [Skip CI]"
+          file_pattern: 'index.html'
           
