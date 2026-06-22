@@ -24,7 +24,7 @@ class WhaleQuantEngine:
         self.atr_period = 10
         
         self.history_file = "history.json"
-        self.state = self.load_and_clean_history()  # Keeps fresh scalping trades, removes old junk
+        self.state = self.load_and_clean_history()
         self.dashboard_data = []
         
         api_key = os.getenv("BINANCE_API_KEY")
@@ -53,26 +53,20 @@ class WhaleQuantEngine:
         return ist_now.strftime("%m-%d %H:%M")
 
     def load_and_clean_history(self):
-        """Purane massive bad simulated trades hatayega, par recent fresh scalps ko save rakhega"""
         default_state = {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
-        
         if os.path.exists(self.history_file):
             try:
                 with open(self.history_file, "r") as f:
                     data = json.load(f)
-                    
                 if "trades" in data:
-                    # Filter: Jo abhi ke genuine Scalp TP wale positive/recent trades hain unhe safe rakhega
                     fresh_trades = [
                         t for t in data["trades"] 
                         if float(t.get("pnl", 0)) > -200.0 and ("Scalp" in t.get("result", "") or "TP" in t.get("result", ""))
                     ]
                     data["trades"] = fresh_trades
                     data["total_pnl"] = sum(float(t.get("pnl", 0)) for t in fresh_trades)
-                
                 if "active_positions" not in data: data["active_positions"] = {}
                 if "last_prices" not in data: data["last_prices"] = {}
-                
                 return data
             except Exception:
                 return default_state
@@ -98,13 +92,10 @@ class WhaleQuantEngine:
         if "BTC" in symbol: base = 64100.0
         elif "ETH" in symbol: base = 1750.0
         else: base = 4200.0
-        
         closes = base + np.cumsum(np.random.normal(0, base * 0.0003, limit))
         volumes = np.random.uniform(500, 2000, limit)
-        
         volumes[-1] = np.mean(volumes) * 1.6
         closes[-1] = closes[-2] + (np.std(closes) * 0.2)
-        
         highs = closes + np.random.uniform(1, 8, limit)
         lows = closes - np.random.uniform(1, 8, limit)
         opens = closes - np.random.normal(0, 4, limit)
@@ -191,7 +182,6 @@ class WhaleQuantEngine:
         self.save_history()
 
         is_active = symbol in self.state["active_positions"]
-        
         if is_active:
             pos_details = self.state["active_positions"][symbol]
             status_data = {
@@ -321,7 +311,7 @@ class WhaleQuantEngine:
     <div class="container">
         <header>
             <h1>WhaleTrader Pro Terminal</h1>
-            <div style="color: #64748b; font-size: 12px;">Sync: <span style="color: #cbd5e1;">{now_str}</span></div>
+            <div style="color: #64748b; font-size: 12px;">Sync: <span>{now_str}</span></div>
         </header>
         
         <div class="matrix-container">
@@ -388,7 +378,25 @@ class WhaleQuantEngine:
             }};
             ws.onclose = () => {{ setTimeout(connectLiveTicker, 4000); }};
         }}
+
+        function startLiveClock() {{
+            setInterval(() => {{
+                const now = new Date();
+                const options = {{ timeZone: "Asia/Kolkata", hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }};
+                const dateOptions = {{ timeZone: "Asia/Kolkata", year: 'numeric', month: '2-digit', day: '2-digit' }};
+                
+                const timeStr = now.toLocaleTimeString('en-US', options);
+                const dateStr = now.toLocaleDateString('zh-Hans-CN', dateOptions).replace(/\//g, '-');
+                
+                const syncEl = document.querySelector("header div span");
+                if (syncEl) {{
+                    syncEl.innerText = dateStr + " " + timeStr;
+                }}
+            }}, 1000);
+        }}
+
         connectLiveTicker();
+        startLiveClock();
         setTimeout(() => {{ window.location.reload(); }}, 300000);
     </script>
 </body>
