@@ -1,13 +1,6 @@
 {
-    "total_pnl": 39.75,
-    "active_positions": {
-        "ETH/USDT": {
-            "side": "sell",
-            "entry": 1755.07,
-            "tp": 1752.55,
-            "sl": 1756.33
-        }
-    },
+    "total_pnl": 41.185840165919295,
+    "active_positions": {},
     "trades": [
         {
             "time": "2026-06-22 14:04",
@@ -44,11 +37,20 @@
             "exit": 2320.22,
             "pnl": 6.09,
             "result": "Scalp TP \ud83c\udfaf"
+        },
+        {
+            "time": "06-22 16:08",
+            "symbol": "ETH/USDT",
+            "side": "SELL",
+            "entry": 1755.07,
+            "exit": 1742.5,
+            "pnl": 1.44,
+            "result": "Scalp TP \ud83c\udfaf"
         }
     ],
     "last_prices": {
-        "BTC/USDT": 63500.9,
-        "ETH/USDT": 1755.07,
-        "PAXG/USDT": 4237.35
+        "BTC/USDT": 64405.44,
+        "ETH/USDT": 1742.5,
+        "PAXG/USDT": 4199.43
     }
 }
