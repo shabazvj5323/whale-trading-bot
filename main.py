@@ -187,8 +187,9 @@ class WhaleQuantEngine:
         self.state["last_prices"][symbol] = current_price
         self.save_history()
 
-        # Position check ke baad status update
-        if symbol in self.state["active_positions"]:
+        # FIX: Position check ke baad status update aur clean state management
+        is_active = symbol in self.state["active_positions"]
+        if is_active:
             pos = self.state["active_positions"][symbol]
             self.dashboard_data.append({
                 "symbol": symbol, "rsi": round(rsi, 2), "signal": f"SCALPING {pos['side'].upper()}", 
@@ -211,6 +212,7 @@ class WhaleQuantEngine:
             self.save_history()
             return "SELL"
         return "WAIT"
+        
         
         
     def generate_html_dashboard(self):
