@@ -1,34 +1,15 @@
-import time
-import logging
 import os
 import json
-import ccxt
-import numpy as np
 from datetime import datetime, timedelta
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
-log = logging.getLogger("WhaleTrader_Pro_Quant")
 
 class WhaleQuantEngine:
     def __init__(self):
-        self.symbols = ["BTC/USDT", "ETH/USDT", "PAXG/USDT"]
         self.history_file = "history.json"
-        # Purani history secure karne ke liye default list yahan daal di hai
-        self.state = self.load_and_clean_history()
-        self.dashboard_data = []
+        # Yahan main wahi keys use kar raha hoon jo aapke log mein dikh rahi hain
+        self.state = self.load_history()
 
-    def load_and_clean_history(self):
-        # Yahan aapki wohi purani history hai jo screenshot mein dikh rahi thi
-        default = {
-            "total_pnl": 41.19,
-            "trades": [
-                {"time": "06-22 16:08", "asset": "ETH/USDT", "vector": "SELL", "entry": "1755.07", "exit": "1742.5", "status": "Scalp TP 🎯", "pnl": "+$1.44"},
-                {"time": "06-22 14:56", "asset": "PAXG/USDT", "vector": "SELL", "entry": "2343.41", "exit": "2320.22", "status": "Scalp TP 🎯", "pnl": "+$6.09"},
-                {"time": "06-22 14:56", "asset": "BTC/USDT", "vector": "SELL", "entry": "66132.65", "exit": "64297.58", "status": "Scalp TP 🎯", "pnl": "+$1.01"},
-                {"time": "2026-06-22 14:45", "asset": "BTC/USDT", "vector": "SELL", "entry": "64175.85", "exit": "64479.76", "status": "Scalp SL 🔴", "pnl": "-$11.84"},
-                {"time": "2026-06-22 14:04", "asset": "BTC/USDT", "vector": "SELL", "entry": "66014.52", "exit": "65124.76", "status": "TP Hit 🎯", "pnl": "+$44.49"}
-            ]
-        }
+    def load_history(self):
+        default = {"trades": [{"time":"06-22 16:08","symbol":"ETH/USDT","pnl":"1.44"}, {"time":"06-22 14:56","symbol":"PAXG/USDT","pnl":"6.09"}, {"time":"06-22 14:56","symbol":"BTC/USDT","pnl":"1.01"}, {"time":"06-22 14:45","symbol":"BTC/USDT","pnl":"-11.84"}, {"time":"06-22 14:04","symbol":"BTC/USDT","pnl":"44.49"}]}
         if os.path.exists(self.history_file):
             try:
                 with open(self.history_file, "r") as f: return json.load(f)
@@ -36,8 +17,8 @@ class WhaleQuantEngine:
         return default
 
     def generate_html_dashboard(self):
-        # History table ki rows
-        hist_rows = "".join([f"<tr><td>{t['time']}</td><td>{t['asset']}</td><td style='color:red;'>{t['vector']}</td><td>{t['entry']}</td><td>{t['exit']}</td><td style='color:green;'>{t['status']}</td><td style='color:green;'>{t['pnl']}</td></tr>" for t in self.state["trades"]])
+        # Yahan sirf wahi keys use ki hain jo aapke JSON mein hain
+        hist_rows = "".join([f"<tr><td>{t.get('time', 'N/A')}</td><td>{t.get('symbol', 'N/A')}</td><td>{t.get('pnl', '0')}</td></tr>" for t in self.state["trades"]])
         
         html_content = f"""<!DOCTYPE html>
 <html>
@@ -54,14 +35,18 @@ class WhaleQuantEngine:
     <h1>WhaleTrader Pro Terminal</h1>
     <div class="stats-container">
         <div class="stat-card">ACCOUNT EQUITY<br><h2>$1041.19</h2></div>
-        <div class="stat-card">LEVERAGE STRATEGY<br><h2>10x Isolated</h2></div>
-        <div class="stat-card">REALIZED NET RETURNS<br><h2>+$41.19 USD</h2></div>
+        <div class="stat-card">LEVERAGE<br><h2>10x Isolated</h2></div>
+        <div class="stat-card">REALIZED PnL<br><h2>+$41.19 USD</h2></div>
     </div>
     <h3>Settlement Log</h3>
-    <table>
-        <tr><th>TIMESTAMP</th><th>ASSET</th><th>VECTOR</th><th>ENTRY</th><th>EXIT</th><th>STATUS</th><th>P&L</th></tr>
-        {hist_rows}
-    </table>
+    <table><tr><th>Time</th><th>Asset</th><th>P&L</th></tr>{hist_rows}</table>
+    <script>
+        let t = 900; 
+        setInterval(()=>{{
+            t--;
+            if(t <= 0) location.reload();
+        }}, 1000);
+    </script>
 </body>
 </html>"""
         with open("index.html", "w") as f: f.write(html_content)
