@@ -262,7 +262,6 @@ class WhaleQuantEngine:
 
         history_rows = ""
         trade_list = list(self.state.get("trades", []))
-        # Loop safety fix for empty/list iterator
         reversed_trades = trade_list[::-1][:8]
         for t in reversed_trades:
             t_color = "#00b574" if float(t["pnl"]) >= 0 else "#ff3b30"
@@ -290,6 +289,7 @@ class WhaleQuantEngine:
         header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }}
         h1 {{ color: #ffffff; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; }}
         h1::before {{ content: ''; display: inline-block; width: 8px; height: 8px; background: #00b574; border-radius: 50%; box-shadow: 0 0 8px #00b574; }}
+        .time-box {{ text-align: right; font-size: 12px; font-weight: 500; color: #64748b; line-height: 1.6; }}
         .matrix-container {{ display: flex; gap: 15px; margin-bottom: 25px; }}
         .stat-card {{ background: #0f111a; border: 1px solid #1e293b; padding: 16px; border-radius: 8px; flex: 1; }}
         .stat-label {{ color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }}
@@ -316,7 +316,11 @@ class WhaleQuantEngine:
     <div class="container">
         <header>
             <h1>WhaleTrader Pro Terminal</h1>
-            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Sync: <span id="clock-sync">{now_str}</span></div>
+            <div class="time-box">
+                <div>Live: <span id="live-clock" style="color: #ffffff; font-weight: bold;">--:--:--</span></div>
+                <div>Last Sync: <span style="color: #38bdf8; font-weight: 600;">{now_str}</span></div>
+                <div>Next Sync In: <span id="countdown-timer" style="color: #f59e0b; font-weight: bold;">15:00</span></div>
+            </div>
         </header>
         
         <div class="matrix-container">
@@ -384,43 +388,28 @@ class WhaleQuantEngine:
             ws.onclose = () => {{ setTimeout(connectLiveTicker, 4000); }};
         }}
 
+        // Live Clock Tracker
         function startLiveClock() {{
             setInterval(() => {{
                 const now = new Date();
                 const options = {{ hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' }};
-                const timeStr = now.toLocaleTimeString('en-US', options);
-                
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const dateStr = `${{year}}-${{month}}-${{day}}`;
-                
-                const syncEl = document.getElementById("clock-sync");
-                if (syncEl) {{
-                    syncEl.innerText = dateStr + " " + timeStr;
-                }}
+                document.getElementById("live-clock").innerText = now.toLocaleTimeString('en-US', options);
             }}, 1000);
         }}
 
-        connectLiveTicker();
-        startLiveClock();
-        setTimeout(() => {{ window.location.reload(); }}, 300000);
-    </script>
-</body>
-</html>"""
-        with open("index.html", "w") as f:
-            f.write(html_content)
-
-    def run_pipeline(self):
-        log.info("⚡ WhaleTrader Premium Terminal System Executed.")
-        for symbol in self.symbols:
-            data = self.fetch_market_data(symbol)
-            if data is None: continue
-            opens, highs, lows, closes, volumes = data
-            self.evaluate_signals(symbol, opens, highs, lows, closes, volumes)
-        self.generate_html_dashboard()
-
-if __name__ == "__main__":
-    engine = WhaleQuantEngine()
-    engine.run_pipeline()
-    
+        // 15-Minute Dynamic Countdown Engine 
+        let totalSeconds = 15 * 60;
+        function startCountdown() {{
+            const timerEl = document.getElementById("countdown-timer");
+            const interval = setInterval(() => {{
+                if (totalSeconds <= 0) {{
+                    clearInterval(interval);
+                    timerEl.innerText = "Syncing... 🔄";
+                    setTimeout(() => {{ window.location.reload(); }}, 2000);
+                }} else {{
+                    totalSeconds--;
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = totalSeconds % 60;
+                    timerEl.innerText = `${{String(minutes).padStart(2, '0')}}:${{String(seconds).padStart(2, '0')}}`;
+                }
+            }}, 1000)
