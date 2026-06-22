@@ -6,7 +6,7 @@ import ccxt
 import numpy as np
 from datetime import datetime, timedelta
 
-# --- WAHI ORIGINAL STRATEGY ---
+# --- WAHI PREMIUM STRATEGY ---
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 log = logging.getLogger("WhaleTrader_Pro_Quant")
 
@@ -88,30 +88,37 @@ class WhaleQuantEngine:
         rows = "".join([f"<tr><td>{d['symbol']}</td><td>{d['signal']}</td><td>{d['rsi']}</td><td>{d['entry']}</td></tr>" for d in self.dashboard_data])
         hist = "".join([f"<tr><td>{t['time']}</td><td>{t['symbol']}</td><td>{t['pnl']}</td></tr>" for t in self.state["trades"][-5:]])
         
-        # PURANA LOOK + NAYI TIMINGS
+        # PURE ORIGINAL LOOK + TIMING FEATURES
         html = f"""<!DOCTYPE html>
 <html>
 <head>
 <style>
-    body {{ font-family: sans-serif; background-color: #08090c; color: #cbd5e1; padding: 20px; }}
-    .header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }}
-    h1 {{ color: #ffffff; }}
-    table {{ width: 100%; border-collapse: collapse; background: #0b0d13; border: 1px solid #1e293b; }}
-    th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #1e293b; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #08090c; color: #cbd5e1; padding: 20px; }}
+    .container {{ max-width: 1000px; margin: auto; }}
+    .header {{ display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 25px; }}
+    h1 {{ color: #ffffff; margin: 0; font-size: 22px; }}
+    .stats-bar {{ background: #0f111a; padding: 15px; border-radius: 8px; border: 1px solid #1e293b; }}
+    table {{ width: 100%; border-collapse: collapse; background: #0b0d13; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }}
+    th, td {{ padding: 14px; text-align: left; border-bottom: 1px solid #1e293b; font-size: 14px; }}
+    th {{ background: #161b22; color: #8b949e; text-transform: uppercase; font-size: 11px; }}
 </style>
 </head>
 <body>
-    <div class="header">
-        <h1>WhaleTrader Pro Terminal</h1>
-        <div style="text-align:right;">
-            <div>Live: <span id="clock" style="color:white; font-weight:bold;">--:--:--</span></div>
-            <div>Last Sync: {now_str}</div>
-            <div id="timer" style="color:#f59e0b; font-weight:bold;">Next Sync In: 15:00</div>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>WhaleTrader Pro Terminal</h1>
+            </div>
+            <div class="stats-bar" style="text-align: right; font-size: 12px;">
+                <div>Live: <span id="clock" style="color:#ffffff; font-weight:bold;">--:--:--</span></div>
+                <div>Last Sync: {now_str}</div>
+                <div id="timer" style="color:#f59e0b; font-weight:bold; margin-top:5px;">Next Sync In: 15:00</div>
+            </div>
         </div>
+        <table><tr><th>Asset</th><th>Signal</th><th>RSI</th><th>Entry</th></tr>{rows}</table>
+        <h3 style="color:#ffffff; margin-top:30px;">Settlement Log</h3>
+        <table><tr><th>Time</th><th>Asset</th><th>P&L</th></tr>{hist}</table>
     </div>
-    <table><tr><th>Asset</th><th>Signal</th><th>RSI</th><th>Entry</th></tr>{rows}</table>
-    <h3>Settlement Log</h3>
-    <table><tr><th>Time</th><th>Asset</th><th>P&L</th></tr>{hist}</table>
     <script>
         setInterval(()=>{{ document.getElementById('clock').innerText = new Date().toLocaleTimeString(); }}, 1000);
         let t = 900;
