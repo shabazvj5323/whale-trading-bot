@@ -24,7 +24,7 @@ class WhaleQuantEngine:
         self.atr_period = 10
         
         self.history_file = "history.json"
-        self.state = self.load_history()
+        self.state = self.load_and_clean_history()  # Filters out old simulation data, keeps fresh scalps
         self.dashboard_data = []
         
         api_key = os.getenv("BINANCE_API_KEY")
@@ -52,18 +52,31 @@ class WhaleQuantEngine:
         ist_now = utc_now + timedelta(hours=5, minutes=30)
         return ist_now.strftime("%m-%d %H:%M")
 
-    def load_history(self):
+    def load_and_clean_history(self):
+        """Purani wild simulation history delete karega aur abhi ke fresh scalps ko save rakhega"""
+        default_state = {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
+        
         if os.path.exists(self.history_file):
             try:
                 with open(self.history_file, "r") as f:
                     data = json.load(f)
-                    if "last_prices" not in data: data["last_prices"] = {}
-                    if "total_pnl" not in data: data["total_pnl"] = 0.0
-                    if "active_positions" not in data: data["active_positions"] = {}
-                    if data["total_pnl"] < -1000.0: data["total_pnl"] = -45.20
-                    return data
-            except Exception: pass
-        return {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
+                    
+                if "trades" in data:
+                    # Filter: Sirf abhi wale fresh scalp trades rakhega (bade simulated -3186 aur anomalies ko delete karega)
+                    fresh_trades = [
+                        t for t in data["trades"] 
+                        if float(t.get("pnl", 0)) > -300.0 and ("Scalp" in t.get("result", "") or "TP" in t.get("result", ""))
+                    ]
+                    data["trades"] = fresh_trades
+                    data["total_pnl"] = sum(float(t.get("pnl", 0)) for t in fresh_trades)
+                
+                if "active_positions" not in data: data["active_positions"] = {}
+                if "last_prices" not in data: data["last_prices"] = {}
+                
+                return data
+            except Exception:
+                return default_state
+        return default_state
 
     def save_history(self):
         with open(self.history_file, "w") as f:
@@ -83,18 +96,18 @@ class WhaleQuantEngine:
     def generate_synthetic_data(self, symbol, limit):
         np.random.seed(int(time.time()) + sum(ord(c) for c in symbol))
         if "BTC" in symbol: base = 64100.0
-        elif "ETH" in symbol: base = 3450.0
-        else: base = 2320.0
+        elif "ETH" in symbol: base = 1750.0
+        else: base = 4200.0
         
-        closes = base + np.cumsum(np.random.normal(0, base * 0.0004, limit))
+        closes = base + np.cumsum(np.random.normal(0, base * 0.0003, limit))
         volumes = np.random.uniform(500, 2000, limit)
         
         volumes[-1] = np.mean(volumes) * 1.6
-        closes[-1] = closes[-2] + (np.std(closes) * 0.3)
+        closes[-1] = closes[-2] + (np.std(closes) * 0.2)
         
-        highs = closes + np.random.uniform(1, 10, limit)
-        lows = closes - np.random.uniform(1, 10, limit)
-        opens = closes - np.random.normal(0, 5, limit)
+        highs = closes + np.random.uniform(1, 8, limit)
+        lows = closes - np.random.uniform(1, 8, limit)
+        opens = closes - np.random.normal(0, 4, limit)
         return opens, highs, lows, closes, volumes
 
     def calculate_indicators(self, opens, highs, lows, closes, volumes):
@@ -154,7 +167,7 @@ class WhaleQuantEngine:
                     reason = "Scalp SL 🛑"
 
             if hit:
-                pnl = max(min(pnl, margin * 0.4), -margin * 0.2)
+                pnl = max(min(pnl, margin * 0.3), -margin * 0.15)
                 self.state["total_pnl"] += pnl
                 trade_record = {
                     "time": self.get_ist_short_str(),
@@ -190,8 +203,8 @@ class WhaleQuantEngine:
 
         if not volume_breakout: return "WAIT"
 
-        tp_factor = 0.4  
-        sl_factor = 0.2  
+        tp_factor = 0.3  
+        sl_factor = 0.15  
 
         if current_price <= lower_b or rsi < 35:
             tp = round(current_price + (atr * tp_factor), 2)
@@ -221,7 +234,7 @@ class WhaleQuantEngine:
 
     def generate_html_dashboard(self):
         now_str = self.get_ist_time_str()
-        pnl_val = round(self.state.get("total_pnl", -12.40), 2)
+        pnl_val = round(self.state.get("total_pnl", 0.0), 2)
         current_wallet = round(self.initial_capital + pnl_val, 2)
         pnl_color = "#00b574" if pnl_val >= 0 else "#ff3b30"
         pnl_prefix = "+" if pnl_val >= 0 else ""
@@ -250,12 +263,11 @@ class WhaleQuantEngine:
                 <tr id='row-{clean_sym}'>
                     <td style='color: #ffffff; font-weight: 600;'>{sym}</td>
                     <td><span id='price-{clean_sym}' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-{clean_sym}' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #4b5563; text-align: center; font-size:12px;'>⚡ SCANNING ENGINE ACTIVE (5M SCALP INTERVAL)</td>
+                    <td><span id='change-{change_sym}' class='badge-glow'>0.00%</span></td>
+                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
                 </tr>"""
 
         history_rows = ""
-        # FIX: Explicit list wrapper to avoid iterator slicing error
         reversed_trades = list(reversed(self.state.get("trades", [])))[:8]
         for t in reversed_trades:
             t_color = "#00b574" if t["pnl"] >= 0 else "#ff3b30"
