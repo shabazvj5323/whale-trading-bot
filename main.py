@@ -178,21 +178,6 @@ class WhaleQuantEngine:
         market_regime = "TRENDING" if adx > 25 else "RANGING"
         self.check_active_positions(symbol, current_price)
         
-        # Calculate EXACT Metrics Delta (Price up/down values)
-        old_price = self.state["last_prices"].get(symbol, current_price)
-        price_diff = round(current_price - old_price, 2)
-        pct_diff = round((price_diff / (old_price if old_price > 0 else 1)) * 100, 2)
-        
-        if price_diff > 0:
-            change_str = f"+${price_diff} (+{pct_diff}%)"
-            trend_class = "price-up"
-        elif price_diff < 0:
-            change_str = f"-${abs(price_diff)} ({pct_diff}%)"
-            trend_class = "price-down"
-        else:
-            change_str = "0.00 (0.00%)"
-            trend_class = "price-stable"
-            
         self.state["last_prices"][symbol] = current_price
         self.save_history()
 
@@ -201,8 +186,7 @@ class WhaleQuantEngine:
         if is_active:
             pos_details = self.state["active_positions"][symbol]
             status_data = {
-                "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
-                "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
                 "signal": f"HOLD {pos_details['side'].upper()}", "entry": pos_details['entry'],
                 "tp": pos_details["tp"], "sl": pos_details["sl"]
             }
@@ -221,8 +205,7 @@ class WhaleQuantEngine:
                 self.save_history()
                 
                 status_data = {
-                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
-                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
                     "signal": "HOLD BUY", "entry": current_price, "tp": tp, "sl": sl
                 }
                 self.dashboard_data.append(status_data)
@@ -233,8 +216,7 @@ class WhaleQuantEngine:
                 self.save_history()
                 
                 status_data = {
-                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
-                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
                     "signal": "HOLD SELL", "entry": current_price, "tp": tp, "sl": sl
                 }
                 self.dashboard_data.append(status_data)
@@ -247,9 +229,8 @@ class WhaleQuantEngine:
                 self.save_history()
                 
                 status_data = {
-                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
-                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
-                    "signal": "HOLD SELL", "entry": current_price, "change": change_str, "class": trend_class, "tp": tp, "sl": sl
+                    "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "signal": "HOLD SELL", "tp": tp, "sl": sl
                 }
                 self.dashboard_data.append(status_data)
                 return "SELL", current_price, tp, sl
@@ -259,8 +240,7 @@ class WhaleQuantEngine:
                 self.save_history()
                 
                 status_data = {
-                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
-                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
                     "signal": "HOLD BUY", "entry": current_price, "tp": tp, "sl": sl
                 }
                 self.dashboard_data.append(status_data)
@@ -277,12 +257,13 @@ class WhaleQuantEngine:
         for data in self.dashboard_data:
             sig_class = "buy-bg" if "BUY" in data["signal"] else "sell-bg"
             reg_class = "trending-badge" if data["regime"] == "TRENDING" else "ranging-badge"
+            clean_sym = data['symbol'].replace("/", "").lower()
             
             monitor_rows += f"""
-            <tr>
+            <tr id="row-{clean_sym}">
                 <td><b>{data['symbol']}</b></td>
-                <td><span class='price-text'>${data['price']}</span></td>
-                <td><span class='change-badge {data['class']}'>{data['change']}</span></td>
+                <td><span id="price-{clean_sym}" class="price-text font-mono">$0.00</span></td>
+                <td><span id="change-{clean_sym}" class="change-badge font-mono">0.00 (0.00%)</span></td>
                 <td><span class='{reg_class}'>{data['regime']} (ADX: {data['adx']})</span></td>
                 <td>{data['rsi']}</td>
                 <td><b>${data['entry']}</b></td>
@@ -292,8 +273,16 @@ class WhaleQuantEngine:
             </tr>"""
 
         if not monitor_rows:
-            monitor_rows = """<tr><td colspan='9' style='text-align:center; color:#848e9c; padding: 35px; font-size:13px;'>
-            🚫 No Active Positions Open. Scanning order book for institutional whale spikes...</td></tr>"""
+            # Agar koi position active nahi hai, tab bhi hum ticker ko live rates dikhane ke liye base blocks bana dete hain
+            for sym, base in [("BTC/USDT", "btc_row"), ("ETH/USDT", "eth_row")]:
+                clean_sym = sym.replace("/", "").lower()
+                monitor_rows += f"""
+                <tr id="row-{clean_sym}">
+                    <td><b>{sym}</b></td>
+                    <td><span id="price-{clean_sym}" class="price-text font-mono">$0.00</span></td>
+                    <td><span id="change-{clean_sym}" class="change-badge font-mono">0.00 (0.00%)</span></td>
+                    <td colspan="6" style="color: #848e9c; text-align: center; font-size:12px;">🚫 Strategy Mode: Standby (Scanning Order Book...)</td>
+                </tr>"""
 
         history_rows = ""
         for t in reversed(self.state.get("trades", [])):
@@ -314,8 +303,7 @@ class WhaleQuantEngine:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="30">
-    <title>WhaleTrader Pro Quantum Terminal</title>
+    <title>WhaleTrader Pro Live Terminal</title>
     <style>
         body {{ font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }}
         .container {{ max-width: 1200px; margin: 0 auto; }}
@@ -325,12 +313,15 @@ class WhaleQuantEngine:
         table {{ width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 35px; overflow: hidden; }}
         th, td {{ padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; font-size: 14px; }}
         th {{ background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }}
+        tr {{ transition: background-color 0.3s; }}
         tr:hover {{ background-color: #1f2630; }}
-        .price-text {{ font-family: monospace; font-size: 15px; font-weight: bold; }}
-        .change-badge {{ font-family: monospace; font-size: 13px; font-weight: bold; padding: 3px 8px; border-radius: 4px; }}
-        .price-up {{ color: #26a69a; background-color: rgba(38, 166, 154, 0.15); }}
-        .price-down {{ color: #ef5350; background-color: rgba(239, 83, 80, 0.15); }}
-        .price-stable {{ color: #ffffff; background-color: #2b3139; }}
+        .font-mono {{ font-family: monospace; font-size: 15px; font-weight: bold; }}
+        .price-text {{ color: #ffffff; padding: 3px 6px; border-radius: 4px; }}
+        .change-badge {{ padding: 3px 8px; border-radius: 4px; font-size: 13px; }}
+        .text-up {{ color: #26a69a !important; }}
+        .text-down {{ color: #ef5350 !important; }}
+        .bg-up {{ background-color: rgba(38, 166, 154, 0.15); }}
+        .bg-down {{ background-color: rgba(239, 83, 80, 0.15); }}
         .signal-badge {{ padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }}
         .buy-bg {{ background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }}
         .sell-bg {{ background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }}
@@ -341,8 +332,8 @@ class WhaleQuantEngine:
 <body>
     <div class="container">
         <header>
-            <h1>🐋 WhaleTrader Pro Terminal</h1>
-            <div style="color: #848e9c;">Next Auto-Sync Active | Last Refresh: <b style="color: #f0b90b;">{now_str}</b></div>
+            <h1>🐋 WhaleTrader Pro Live Terminal</h1>
+            <div style="color: #848e9c;">Quantum Engine Last Scan: <b style="color: #f0b90b;">{now_str}</b></div>
         </header>
         
         <div class="pnl-box">
@@ -350,11 +341,11 @@ class WhaleQuantEngine:
             <h2 style="margin: 5px 0 0 0; color: {pnl_color}; font-size: 32px;">${pnl_val} USD</h2>
         </div>
 
-        <h3>🟢 Active Orders & Live Positions Monitor</h3>
+        <h3>🟢 Active Orders & Streaming Price Monitor (Live)</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Market Pair</th><th>Live Price</th><th>Price Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
+                    <th>Market Pair</th><th>Live Running Price</th><th>24h Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
                 </tr>
             </thead>
             <tbody>{monitor_rows}</tbody>
@@ -370,6 +361,51 @@ class WhaleQuantEngine:
             <tbody>{history_rows if history_rows else '<tr><td colspan="7" style="text-align:center; color:#848e9c; padding:20px;">No positions liquidated yet. Scan ongoing...</td></tr>'}</tbody>
         </table>
     </div>
+
+    <script>
+        // Binance API WebSocket/Ticker Connection Engine
+        const symbols = ['btcusdt', 'ethusdt'];
+        
+        function connectLiveTicker() {{
+            const wsUrl = "wss://stream.binance.com:9443/ws/" + symbols.map(s => s + "@ticker").join("/");
+            const ws = new WebSocket(wsUrl);
+            
+            ws.onmessage = (event) => {{
+                const data = JSON.parse(event.data);
+                const sym = data.s.toLowerCase(); // btcusdt or ethusdt
+                
+                const priceEl = document.getElementById("price-" + sym);
+                const changeEl = document.getElementById("change-" + sym);
+                
+                if (priceEl && changeEl) {{
+                    const price = parseFloat(data.c).toFixed(2);
+                    const changeAmt = parseFloat(data.p).toFixed(2);
+                    const changePct = parseFloat(data.P).toFixed(2);
+                    
+                    priceEl.innerText = "$" + price;
+                    
+                    if (parseFloat(changePct) >= 0) {{
+                        changeEl.innerText = "+" + changeAmt + " (+" + changePct + "%)";
+                        changeEl.className = "change-badge font-mono text-up bg-up";
+                        priceEl.className = "price-text font-mono text-up";
+                    }} else {{
+                        changeEl.innerText = changeAmt + " (" + changePct + "%)";
+                        changeEl.className = "change-badge font-mono text-down bg-down";
+                        priceEl.className = "price-text font-mono text-down";
+                    }}
+                }}
+            }};
+            
+            ws.onclose = () => {{
+                setTimeout(connectLiveTicker, 5000); // Auto reconnect engine
+            }};
+        }}
+        
+        connectLiveTicker();
+        
+        // Auto page reloader every 5 minutes just to fetch backend python signals
+        setTimeout(() => {{ window.location.reload(); }}, 300000);
+    </script>
 </body>
 </html>"""
         with open("index.html", "w") as f:
@@ -384,7 +420,4 @@ class WhaleQuantEngine:
             self.evaluate_signals(symbol, opens, highs, lows, closes, volumes)
         self.generate_html_dashboard()
 
-if __name__ == "__main__":
-    engine = WhaleQuantEngine()
-    engine.run_pipeline()
-    
+if __name__ == "__main
