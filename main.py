@@ -255,7 +255,9 @@ class WhaleQuantEngine:
                 </tr>"""
 
         history_rows = ""
-        for t in reversed(self.state.get("trades", []))[:8]:
+        # FIX: Explicit list wrapper to avoid iterator slicing error
+        reversed_trades = list(reversed(self.state.get("trades", [])))[:8]
+        for t in reversed_trades:
             t_color = "#00b574" if t["pnl"] >= 0 else "#ff3b30"
             badge_type = "history-buy" if t["side"] == "BUY" else "history-sell"
             history_rows += f"""
