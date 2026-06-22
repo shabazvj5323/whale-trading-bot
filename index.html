@@ -3,80 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhaleTrader Quant Live Terminal</title>
+    <meta http-equiv="refresh" content="30">
+    <title>WhaleTrader Pro Quantum Terminal</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
+        .container { max-width: 1200px; margin: 0 auto; }
         header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 15px; margin-bottom: 25px; }
         h1 { color: #f0b90b; margin: 0; font-size: 24px; }
         .pnl-box { background: #1e2329; padding: 15px 25px; border-radius: 6px; text-align: center; margin-bottom: 25px; border: 1px solid #2b3139; }
-        table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 30px; overflow: hidden; }
-        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; }
-        th { background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; }
+        table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 35px; overflow: hidden; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; font-size: 14px; }
+        th { background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr:hover { background-color: #1f2630; }
         .price-text { font-family: monospace; font-size: 15px; font-weight: bold; }
+        .change-badge { font-family: monospace; font-size: 13px; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
+        .price-up { color: #26a69a; background-color: rgba(38, 166, 154, 0.15); }
+        .price-down { color: #ef5350; background-color: rgba(239, 83, 80, 0.15); }
+        .price-stable { color: #ffffff; background-color: #2b3139; }
         .signal-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .wait { background-color: #2b3139; color: #848e9c; }
         .buy-bg { background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }
         .sell-bg { background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }
-        .trending-badge { color: #f0b90b; } .ranging-badge { color: #90caf9; }
+        .trending-badge { color: #f0b90b; font-weight: bold; } .ranging-badge { color: #90caf9; font-weight: bold; }
+        h3 { color: #ffffff; font-weight: 500; border-left: 4px solid #f0b90b; padding-left: 10px; margin-bottom: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🐋 WhaleTrader Quant Live Terminal</h1>
-            <div style="color: #848e9c;">Last Scan: <b style="color: #f0b90b;">2026-06-22 01:09:01 PM (IST)</b></div>
+            <h1>🐋 WhaleTrader Pro Terminal</h1>
+            <div style="color: #848e9c;">Next Auto-Sync Active | Last Refresh: <b style="color: #f0b90b;">2026-06-22 01:48:36 PM (IST)</b></div>
         </header>
         
         <div class="pnl-box">
-            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Account P&L</span>
-            <h2 style="margin: 5px 0 0 0; color: #ef5350; font-size: 32px;">$-212.96 USD</h2>
+            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Portfolio Net P&L</span>
+            <h2 style="margin: 5px 0 0 0; color: #ef5350; font-size: 32px;">$-317.16 USD</h2>
         </div>
 
-        <h3>📡 Live Market Scan & Active Monitor</h3>
+        <h3>🟢 Active Orders & Live Positions Monitor</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Pair</th><th>Price</th><th>Regime Index</th><th>RSI</th><th>Status</th><th>Target TP</th><th>Stop SL</th>
+                    <th>Market Pair</th><th>Live Price</th><th>Price Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
                 </tr>
             </thead>
             <tbody>
             <tr>
                 <td><b>BTC/USDT</b></td>
-                <td><span class='price-text'>$63745.12</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 62.82)</span></td>
-                <td>28.47</td>
-                <td><span class='signal-badge sell-bg'>SHORT Breakout</span></td>
-                <td style='color: #26a69a;'>62704.41</td>
-                <td style='color: #ef5350;'>64244.66</td>
-            </tr>
-            <tr>
-                <td><b>ETH/USDT</b></td>
-                <td><span class='price-text'>$3412.8</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 75.95)</span></td>
-                <td>23.29</td>
-                <td><span class='signal-badge sell-bg'>SHORT Breakout</span></td>
-                <td style='color: #26a69a;'>3082.7</td>
-                <td style='color: #ef5350;'>3571.25</td>
+                <td><span class='price-text'>$66014.52</span></td>
+                <td><span class='change-badge price-stable'>0.00 (0.00%)</span></td>
+                <td><span class='trending-badge'>TRENDING (ADX: 42.57)</span></td>
+                <td>28.03</td>
+                <td><b>$66014.52</b></td>
+                <td><span class='signal-badge sell-bg'>HOLD SELL</span></td>
+                <td style='color: #26a69a; font-weight:bold;'>$65124.76</td>
+                <td style='color: #ef5350; font-weight:bold;'>$66441.61</td>
             </tr></tbody>
         </table>
 
-        <h3>📜 Closed Trades Ledger (P&L History)</h3>
+        <h3>📜 Closed Trades Ledger (Real-Time History)</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Close Time</th><th>Pair</th><th>Side</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Reason</th><th>Profit/Loss</th>
+                    <th>Execution Time</th><th>Market Pair</th><th>Direction</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Status</th><th>Net P&L ($)</th>
                 </tr>
             </thead>
             <tbody>
+            <tr>
+                <td>2026-06-22 13:48 IST</td>
+                <td><b>ETH/USDT</b></td>
+                <td>SELL</td>
+                <td>$3412.8</td>
+                <td>$3571.25</td>
+                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
+                <td style='color: #ef5350; font-weight: bold;'>$-79.22 USD</td>
+            </tr>
+            <tr>
+                <td>2026-06-22 13:48 IST</td>
+                <td><b>BTC/USDT</b></td>
+                <td>SELL</td>
+                <td>$63745.12</td>
+                <td>$64244.66</td>
+                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
+                <td style='color: #ef5350; font-weight: bold;'>$-24.98 USD</td>
+            </tr>
             <tr>
                 <td>2026-06-22 13:09 IST</td>
                 <td><b>ETH/USDT</b></td>
                 <td>SELL</td>
                 <td>$1204.25</td>
                 <td>$1630.16</td>
-                <td>SL Hit 🛑</td>
-                <td style='color: #ef5350; font-weight: bold;'>$-212.96</td>
+                <td><span style='color:#ef5350'>SL Hit 🛑</span></td>
+                <td style='color: #ef5350; font-weight: bold;'>$-212.96 USD</td>
             </tr></tbody>
         </table>
     </div>
