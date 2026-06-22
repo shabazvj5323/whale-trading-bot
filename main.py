@@ -411,4 +411,6 @@ class WhaleQuantEngine:
         html = self.generate_html_dashboard()
         with open("index.html", "w", encoding="utf-8") as f:
             f.write(html)
-            
+if __name__ == "__main__":
+    engine = WhaleQuantEngine()
+    engine.run_pipeline()           
