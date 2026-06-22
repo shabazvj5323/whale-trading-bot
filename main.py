@@ -12,17 +12,15 @@ log = logging.getLogger("WhaleTrader_Pro_Quant")
 
 class WhaleQuantEngine:
     def __init__(self):
-        # Added Gold (PAXG) and Silver assets for Binance compatibility
         self.symbols = ["BTC/USDT", "ETH/USDT", "PAXG/USDT"]
         self.leverage = 10 
-        self.total_capital = 1000.0  # Total Capital Set to $1000
-        self.risk_per_trade = 0.25   # 25% allocation per trade ($250 margin * 10x = $2500 buying power)
+        self.total_capital = 1000.0
+        self.risk_per_trade = 0.25
         
-        # Hyper-Scalping Metrics (5 Minute Target Engine)
-        self.volume_multiplier = 1.5  # Lower threshold for more frequent scalp entries
-        self.rsi_period = 9           # Faster RSI for quick shifts
+        self.volume_multiplier = 1.5
+        self.rsi_period = 9
         self.bb_period = 20
-        self.bb_std_dev = 1.8         # Tighter bands for maximum scalp triggers
+        self.bb_std_dev = 1.8
         self.atr_period = 10
         
         self.history_file = "history.json"
@@ -61,6 +59,7 @@ class WhaleQuantEngine:
                     data = json.load(f)
                     if "last_prices" not in data: data["last_prices"] = {}
                     if "total_pnl" not in data: data["total_pnl"] = 0.0
+                    if "active_positions" not in data: data["active_positions"] = {}
                     return data
             except Exception: pass
         return {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
@@ -69,7 +68,7 @@ class WhaleQuantEngine:
         with open(self.history_file, "w") as f:
             json.dump(self.state, f, indent=4)
 
-    def fetch_market_data(self, symbol, timeframe='5m', limit=100): # Changed to 5m for High-Frequency Scalping
+    def fetch_market_data(self, symbol, timeframe='5m', limit=100):
         if self.mock_mode:
             return self.generate_synthetic_data(symbol, limit)
         else:
@@ -84,7 +83,7 @@ class WhaleQuantEngine:
         np.random.seed(int(time.time()) + sum(ord(c) for c in symbol))
         if "BTC" in symbol: base = 65000.0
         elif "ETH" in symbol: base = 3500.0
-        else: base = 2350.0 # Gold / PAXG Base
+        else: base = 2350.0
         
         closes = base + np.cumsum(np.random.normal(0, base * 0.002, limit))
         volumes = np.random.uniform(500, 2000, limit)
@@ -125,9 +124,10 @@ class WhaleQuantEngine:
             entry = pos["entry"]
             tp = pos["tp"]
             sl = pos["sl"]
-            margin = pos["margin"]
             
-            # Scalp calculations accounting for 10x Leverage
+            # SAFE CHECK: Fixed KeyError if old history file doesn't have margin key
+            margin = pos.get("margin", 250.0) 
+            
             notional_value = margin * self.leverage
             qty = notional_value / entry
             
@@ -190,11 +190,10 @@ class WhaleQuantEngine:
 
         if not volume_breakout: return "WAIT"
 
-        # TIGHT SCALPING BUFFER: Small targets, quick profits, very tight protective stop-loss
-        tp_factor = 0.6  # 0.6x ATR target for instant profit collection
-        sl_factor = 0.4  # ultra-tight stop loss to minimize risk exposure
+        tp_factor = 0.6  
+        sl_factor = 0.4  
 
-        if current_price <= lower_b or rsi < 38: # Fast entry triggers
+        if current_price <= lower_b or rsi < 38:
             tp = round(current_price + (atr * tp_factor), 2)
             sl = round(current_price - (atr * sl_factor), 2)
             self.state["active_positions"][symbol] = {"side": "buy", "entry": current_price, "tp": tp, "sl": sl, "margin": 250.0}
