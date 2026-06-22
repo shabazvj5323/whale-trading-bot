@@ -1,17 +1,20 @@
 {
-    "total_pnl": 0,
-    "active_positions": {
-        "BTC/USDT": {
-            "side": "sell",
+    "total_pnl": 0.10010200129276817,
+    "active_positions": {},
+    "trades": [
+        {
+            "time": "06-23 00:31",
+            "symbol": "BTC/USDT",
+            "side": "SELL",
             "entry": 64234.48,
-            "tp": 64228.05,
-            "sl": 64237.69
+            "exit": 64075.98,
+            "pnl": 0.1,
+            "result": "Scalp TP \ud83c\udfaf"
         }
-    },
-    "trades": [],
+    ],
     "last_prices": {
-        "BTC/USDT": 64234.48,
-        "ETH/USDT": 1751.06,
-        "PAXG/USDT": 4203.8
+        "BTC/USDT": 63959.21,
+        "ETH/USDT": 1737.55,
+        "PAXG/USDT": 4187.05
     }
 }
