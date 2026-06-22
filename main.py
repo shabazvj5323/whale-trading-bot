@@ -174,13 +174,16 @@ class WhaleQuantEngine:
                 self.save_history()
 
     def evaluate_signals(self, symbol, opens, highs, lows, closes, volumes):
+        # Ye loop ab har price point check karega taaki TP/SL miss na ho
+        for price in closes:
+            self.check_active_positions(symbol, price)
+
         rsi, upper_b, sma, lower_b, atr = self.calculate_indicators(opens, highs, lows, closes, volumes)
         current_price = round(closes[-1], 2)
         current_volume = volumes[-1]
         avg_volume = np.mean(volumes[-15:-1])
         volume_breakout = current_volume > (avg_volume * self.volume_multiplier)
         
-        self.check_active_positions(symbol, current_price)
         self.state["last_prices"][symbol] = current_price
         self.save_history()
 
@@ -224,7 +227,7 @@ class WhaleQuantEngine:
             return "SELL"
 
         return "WAIT"
-
+        
     def generate_html_dashboard(self):
         now_str = self.get_ist_time_str()
         pnl_val = round(self.state.get("total_pnl", 0.0), 2)
