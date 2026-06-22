@@ -36,7 +36,7 @@
     <div class="container">
         <header>
             <h1>WhaleTrader Pro Terminal</h1>
-            <div style="color: #64748b; font-size: 12px;">Sync: <span style="color: #cbd5e1;">2026-06-22 03:17:19 PM</span></div>
+            <div style="color: #64748b; font-size: 12px;">Sync: <span>2026-06-22 03:51:51 PM</span></div>
         </header>
         
         <div class="matrix-container">
@@ -62,24 +62,16 @@
                 </tr>
             </thead>
             <tbody>
-                <tr id='row-btcusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>BTC/USDT</td>
-                    <td><span id='price-btcusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-btcusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr>
-                <tr id='row-ethusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>ETH/USDT</td>
-                    <td><span id='price-ethusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-ethusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr>
-                <tr id='row-paxgusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>PAXG/USDT</td>
-                    <td><span id='price-paxgusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-paxgusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr></tbody>
+            <tr id='row-ethusdt'>
+                <td style='color: #ffffff; font-weight: 600;'>ETH/USDT</td>
+                <td><span id='price-ethusdt' class='price-ticker'>$0.00</span></td>
+                <td><span id='change-ethusdt' class='badge-glow'>0.00%</span></td>
+                <td><span class='badge-metric'>RSI: 67.35</span></td>
+                <td style='color: #cbd5e1;'>$1755.07</td>
+                <td><span class='status-pill sell-glow'>SCALPING SELL</span></td>
+                <td style='color: #00b574;'>$1752.55</td>
+                <td style='color: #ff3b30;'>$1756.33</td>
+            </tr></tbody>
         </table>
 
         <h3>Settlement Log</h3>
@@ -157,7 +149,25 @@
             };
             ws.onclose = () => { setTimeout(connectLiveTicker, 4000); };
         }
+
+        function startLiveClock() {
+            setInterval(() => {
+                const now = new Date();
+                const options = { timeZone: "Asia/Kolkata", hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+                const dateOptions = { timeZone: "Asia/Kolkata", year: 'numeric', month: '2-digit', day: '2-digit' };
+                
+                const timeStr = now.toLocaleTimeString('en-US', options);
+                const dateStr = now.toLocaleDateString('zh-Hans-CN', dateOptions).replace(/\//g, '-');
+                
+                const syncEl = document.querySelector("header div span");
+                if (syncEl) {
+                    syncEl.innerText = dateStr + " " + timeStr;
+                }
+            }, 1000);
+        }
+
         connectLiveTicker();
+        startLiveClock();
         setTimeout(() => { window.location.reload(); }, 300000);
     </script>
 </body>
