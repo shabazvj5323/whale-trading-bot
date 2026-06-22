@@ -1,13 +1,30 @@
 {
-    "total_pnl": 0.0,
+    "total_pnl": -212.95500000000004,
     "active_positions": {
+        "BTC/USDT": {
+            "side": "sell",
+            "entry": 63745.12,
+            "tp": 62704.41,
+            "sl": 64244.66,
+            "qty": 0.05
+        },
         "ETH/USDT": {
             "side": "sell",
-            "entry": 1204.25,
-            "tp": 316.94,
-            "sl": 1630.16,
+            "entry": 3412.8,
+            "tp": 3082.7,
+            "sl": 3571.25,
             "qty": 0.5
         }
     },
-    "trades": []
+    "trades": [
+        {
+            "time": "2026-06-22 13:09",
+            "symbol": "ETH/USDT",
+            "side": "SELL",
+            "entry": 1204.25,
+            "exit": 1630.16,
+            "pnl": -212.96,
+            "result": "SL Hit \ud83d\uded1"
+        }
+    ]
 }
