@@ -22,14 +22,92 @@ jobs:
           python -c '
           import time
           import math
+          import random
+          import logging
+
+          logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
+          log = logging.getLogger("WhaleTrader")
 
           SYMBOLS = ["BTCUSDT", "ETHUSDT", "XAUUSDT", "XAGUSDT"]
           VOLUME_MULTIPLIER = 2.5
           RSI_PERIOD = 14
+          BB_PERIOD = 20
+          BB_STD_DEV = 2
 
-          print("2026-06-21 18:25:00,000 | INFO | WhaleTrader Pro V5 Secure Engine Booted.")
-          for s in SYMBOLS:
-              print(f"--- Evaluating Matrix Array: {s} ---")
-              print(f"{s} Live Price: Simulated | RSI: 48.5 | Engine Signal: WAIT")
+          def generate_dynamic_market_feed(symbol):
+              t = time.time()
+              seed = sum(ord(c) for c in symbol) + int(t)
+              random.seed(seed)
+              
+              base_prices = {"BTCUSDT": 67250.0, "ETHUSDT": 3540.0, "XAUUSDT": 2340.0, "XAGUSDT": 29.5}
+              base_p = base_prices.get(symbol, 100.0)
+              
+              candles = []
+              current_price = base_p
+              for i in range(60): # 60 candles taaki BBands ka 20 period sahi se calculate ho
+                  change = current_price * random.uniform(-0.004, 0.004)
+                  open_p = current_price
+                  close_p = current_price + change
+                  current_price = close_p
+                  
+                  vol = 20000.0 * random.uniform(0.5, 1.8)
+                  if i == 59 and random.choice([True, False]):  
+                      vol = vol * random.uniform(2.6, 3.5)
+                      
+                  candles.append({"o": open_p, "c": close_p, "v": vol})
+              return candles, current_price
+
+          def calculate_rsi(prices, period=14):
+              if len(prices) < period: return 50
+              gains = [max(prices[i] - prices[i-1], 0) for i in range(1, len(prices))]
+              losses = [max(prices[i-1] - prices[i], 0) for i in range(1, len(prices))]
+              avg_gain = sum(gains[:period]) / period
+              avg_loss = sum(losses[:period]) / period
+              if avg_loss == 0: return 100
+              for i in range(period, len(prices) - 1):
+                  avg_gain = (avg_gain * (period - 1) + gains[i]) / period
+                  avg_loss = (avg_loss * (period - 1) + losses[i]) / period
+              return 100 - (100 / (1 + (avg_gain / avg_loss)))
+
+          def calculate_bollinger_bands(prices, period=20, std_dev_mult=2):
+              if len(prices) < period: return 0, 0, 0
+              recent_prices = prices[-period:]
+              sma = sum(recent_prices) / period
+              variance = sum((x - sma) ** 2 for x in recent_prices) / period
+              std_dev = math.sqrt(variance)
+              upper_band = sma + (std_dev_mult * std_dev)
+              lower_band = sma - (std_dev_mult * std_dev)
+              return upper_band, sma, lower_band
+
+          def extract_bbands_signals(candles):
+              closes = [c["c"] for c in candles]
+              volumes = [c["v"] for c in candles]
+              
+              current_price = closes[-1]
+              current_volume = volumes[-1]
+              avg_volume = sum(volumes[-21:-1]) / 20
+              
+              rsi = calculate_rsi(closes, RSI_PERIOD)
+              upper_b, m_band, lower_b = calculate_bollinger_bands(closes, BB_PERIOD, BB_STD_DEV)
+              
+              volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
+              
+              # Core BBands Strategy Integration
+              # BUY: Price breaks or touches Lower Band + Volume Breakout + RSI Oversold condition
+              if volume_breakout and current_price <= lower_b and rsi < 40:
+                  return "BUY", rsi, upper_b, lower_b
+              # SELL: Price breaks or touches Upper Band + Volume Breakout + RSI Overbought condition
+              elif volume_breakout and current_price >= upper_b and rsi > 60:
+                  return "SELL", rsi, upper_b, lower_b
+                  
+              return "WAIT", rsi, upper_b, lower_b
+
+          log.info("WhaleTrader Pro V5 BBands + RSI Hybrid Engine Booted.")
+          for symbol in SYMBOLS:
+              log.info(f"--- Evaluating Matrix Array: {symbol} ---")
+              candles, price = generate_dynamic_market_feed(symbol)
+              signal, rsi, upper, lower = extract_bbands_signals(candles)
+              log.info(f"{symbol} Price: {round(price, 2)} | BB-Upper: {round(upper, 2)} | BB-Lower: {round(lower, 2)}")
+              log.info(f"{symbol} Metrics -> RSI: {round(rsi, 2)} | Engine Signal: {signal}")
           '
           
