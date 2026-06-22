@@ -17,7 +17,7 @@ jobs:
       - name: Code Base Pull
         uses: actions/checkout@v4
         with:
-          clean: true
+          clean: false
 
       - name: Environment Spin Up
         uses: actions/setup-python@v5
@@ -36,9 +36,9 @@ jobs:
         run: |
           python main.py
 
-      - name: Deploy Live Dashboard to GitHub Pages
+      - name: Commit & Deploy Live Metrics Database
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "System Engine: Auto-Updated Live Quant Dashboard [Skip CI]"
-          file_pattern: 'index.html'
+          commit_message: "System Analytics: Database Ledger & HTML State Sync [Skip CI]"
+          file_pattern: 'index.html history.json'
           
