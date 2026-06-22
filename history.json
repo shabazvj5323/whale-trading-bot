@@ -1,11 +1,7 @@
 {
     "total_pnl": 40.40736578955102,
     "active_positions": {
-        "PAXG/USDT": {
-            "side": "sell",
-            "entry": 4207.08,
-            "tp": 4204.98,
-            "sl": 4208.13
+        
         }
     },
     "trades": [
