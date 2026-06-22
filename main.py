@@ -225,7 +225,7 @@ class WhaleQuantEngine:
 
         return "WAIT"
 
-    def generate_html_dashboard(self):
+         def generate_html_dashboard(self):
         now_str = self.get_ist_time_str()
         pnl_val = round(self.state.get("total_pnl", 0.0), 2)
         current_wallet = round(self.initial_capital + pnl_val, 2)
@@ -262,7 +262,6 @@ class WhaleQuantEngine:
 
         history_rows = ""
         trade_list = list(self.state.get("trades", []))
-        # Loop safety fix for empty/list iterator
         reversed_trades = trade_list[::-1][:8]
         for t in reversed_trades:
             t_color = "#00b574" if float(t["pnl"]) >= 0 else "#ff3b30"
@@ -408,8 +407,7 @@ class WhaleQuantEngine:
     </script>
 </body>
 </html>"""
-    with open("index.html", "w", encoding="utf-8") as f:
-            f.write(html_content)
+        return html_content
 
     def run_pipeline(self):
         log.info("⚡ WhaleTrader Premium Terminal System Executed.")
@@ -418,9 +416,9 @@ class WhaleQuantEngine:
             if data is None: continue
             opens, highs, lows, closes, volumes = data
             self.evaluate_signals(symbol, opens, highs, lows, closes, volumes)
-        self.generate_html_dashboard()
-
-if __name__ == "__main__":
-    engine = WhaleQuantEngine()
-    engine.run_pipeline()
-    
+        
+        # Dashboard save yahan hoga
+        html = self.generate_html_dashboard()
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(html)
+            
