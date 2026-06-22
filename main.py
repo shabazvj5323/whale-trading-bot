@@ -174,7 +174,7 @@ class WhaleQuantEngine:
                 self.save_history()
 
     def evaluate_signals(self, symbol, opens, highs, lows, closes, volumes):
-        # Ye loop ab har price point check karega taaki TP/SL miss na ho
+        # FIX: Saare historical prices scan karo, TP/SL hit hua toh yahi band ho jayega
         for price in closes:
             self.check_active_positions(symbol, price)
 
@@ -187,46 +187,31 @@ class WhaleQuantEngine:
         self.state["last_prices"][symbol] = current_price
         self.save_history()
 
-        is_active = symbol in self.state["active_positions"]
-        if is_active:
-            pos_details = self.state["active_positions"][symbol]
-            status_data = {
-                "symbol": symbol, "rsi": round(rsi, 2), "signal": f"SCALPING {pos_details['side'].upper()}", 
-                "entry": pos_details['entry'], "tp": pos_details["tp"], "sl": pos_details["sl"]
-            }
-            self.dashboard_data.append(status_data)
+        # Position check ke baad status update
+        if symbol in self.state["active_positions"]:
+            pos = self.state["active_positions"][symbol]
+            self.dashboard_data.append({
+                "symbol": symbol, "rsi": round(rsi, 2), "signal": f"SCALPING {pos['side'].upper()}", 
+                "entry": pos['entry'], "tp": pos["tp"], "sl": pos["sl"]
+            })
             return "WAIT"
 
         if not volume_breakout: return "WAIT"
 
-        tp_factor = 0.3  
-        sl_factor = 0.15  
-
+        # Signal Logic
+        tp_factor, sl_factor = 0.3, 0.15
         if current_price <= lower_b or rsi < 35:
-            tp = round(current_price + (atr * tp_factor), 2)
-            sl = round(current_price - (atr * sl_factor), 2)
+            tp, sl = round(current_price + (atr * tp_factor), 2), round(current_price - (atr * sl_factor), 2)
             self.state["active_positions"][symbol] = {"side": "buy", "entry": current_price, "tp": tp, "sl": sl}
             self.save_history()
-            
-            status_data = {
-                "symbol": symbol, "rsi": round(rsi, 2), "signal": "SCALPING BUY", "entry": current_price, "tp": tp, "sl": sl
-            }
-            self.dashboard_data.append(status_data)
             return "BUY"
-            
         elif current_price >= upper_b or rsi > 65:
-            tp = round(current_price - (atr * tp_factor), 2)
-            sl = round(current_price + (atr * sl_factor), 2)
+            tp, sl = round(current_price - (atr * tp_factor), 2), round(current_price + (atr * sl_factor), 2)
             self.state["active_positions"][symbol] = {"side": "sell", "entry": current_price, "tp": tp, "sl": sl}
             self.save_history()
-            
-            status_data = {
-                "symbol": symbol, "rsi": round(rsi, 2), "signal": "SCALPING SELL", "entry": current_price, "tp": tp, "sl": sl
-            }
-            self.dashboard_data.append(status_data)
             return "SELL"
-
         return "WAIT"
+        
         
     def generate_html_dashboard(self):
         now_str = self.get_ist_time_str()
