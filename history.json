@@ -1,77 +1,10 @@
 {
-    "total_pnl": 40.40736578955102,
-    "active_positions": {
-        
-        }
-    },
-    "trades": [
-        {
-            "time": "2026-06-22 14:04",
-            "symbol": "BTC/USDT",
-            "side": "SELL",
-            "entry": 66014.52,
-            "exit": 65124.76,
-            "pnl": 44.49,
-            "result": "TP Hit \ud83c\udfaf"
-        },
-        {
-            "time": "2026-06-22 14:45",
-            "symbol": "BTC/USDT",
-            "side": "SELL",
-            "entry": 64175.85,
-            "exit": 64479.76,
-            "pnl": -11.84,
-            "result": "Scalp SL \ud83d\uded1"
-        },
-        {
-            "time": "06-22 14:56",
-            "symbol": "BTC/USDT",
-            "side": "SELL",
-            "entry": 66132.65,
-            "exit": 64297.58,
-            "pnl": 1.01,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-22 14:56",
-            "symbol": "PAXG/USDT",
-            "side": "SELL",
-            "entry": 2343.41,
-            "exit": 2320.22,
-            "pnl": 6.09,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-22 16:08",
-            "symbol": "ETH/USDT",
-            "side": "SELL",
-            "entry": 1755.07,
-            "exit": 1742.5,
-            "pnl": 1.44,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-22 18:20",
-            "symbol": "BTC/USDT",
-            "side": "BUY",
-            "entry": 64138.65,
-            "exit": 64072.97,
-            "pnl": -0.05,
-            "result": "Scalp SL \ud83d\uded1"
-        },
-        {
-            "time": "06-22 18:20",
-            "symbol": "ETH/USDT",
-            "side": "SELL",
-            "entry": 1743.23,
-            "exit": 1745.75,
-            "pnl": -0.73,
-            "result": "Scalp SL \ud83d\uded1"
-        }
-    ],
+    "total_pnl": 0.0,
+    "active_positions": {},
+    "trades": [],
     "last_prices": {
-        "BTC/USDT": 64072.97,
-        "ETH/USDT": 1745.75,
-        "PAXG/USDT": 4207.08
+        "BTC/USDT": 64329.59,
+        "ETH/USDT": 1755.15,
+        "PAXG/USDT": 4202.28
     }
 }
