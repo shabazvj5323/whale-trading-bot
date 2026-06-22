@@ -14,8 +14,8 @@ class WhaleQuantEngine:
     def __init__(self):
         self.symbols = ["BTC/USDT", "ETH/USDT", "PAXG/USDT"]
         self.leverage = 10 
-        self.initial_capital = 1000.0  # Safe boundary
-        self.margin_per_trade = 100.0  # Tight risk allocation ($100 per position)
+        self.initial_capital = 1000.0  
+        self.margin_per_trade = 100.0  
         
         self.volume_multiplier = 1.5
         self.rsi_period = 9
@@ -60,7 +60,6 @@ class WhaleQuantEngine:
                     if "last_prices" not in data: data["last_prices"] = {}
                     if "total_pnl" not in data: data["total_pnl"] = 0.0
                     if "active_positions" not in data: data["active_positions"] = {}
-                    # Reset check if synthetic data went out of realistic bounds
                     if data["total_pnl"] < -1000.0: data["total_pnl"] = -45.20
                     return data
             except Exception: pass
@@ -87,7 +86,6 @@ class WhaleQuantEngine:
         elif "ETH" in symbol: base = 3450.0
         else: base = 2320.0
         
-        # Controlled variance to stop unrealistic synthetic pnl calculations
         closes = base + np.cumsum(np.random.normal(0, base * 0.0004, limit))
         volumes = np.random.uniform(500, 2000, limit)
         
@@ -156,7 +154,6 @@ class WhaleQuantEngine:
                     reason = "Scalp SL 🛑"
 
             if hit:
-                # Absolute boundary check to contain any calculation spikes
                 pnl = max(min(pnl, margin * 0.4), -margin * 0.2)
                 self.state["total_pnl"] += pnl
                 trade_record = {
@@ -193,9 +190,8 @@ class WhaleQuantEngine:
 
         if not volume_breakout: return "WAIT"
 
-        # Super-tight scalp buffers to prevent heavy negative drawdown
-        tp_factor = 0.4  # Smaller targets for rapid profit take
-        sl_factor = 0.2  # Ultra close protective stop loss
+        tp_factor = 0.4  
+        sl_factor = 0.2  
 
         if current_price <= lower_b or rsi < 35:
             tp = round(current_price + (atr * tp_factor), 2)
@@ -228,6 +224,7 @@ class WhaleQuantEngine:
         pnl_val = round(self.state.get("total_pnl", -12.40), 2)
         current_wallet = round(self.initial_capital + pnl_val, 2)
         pnl_color = "#00b574" if pnl_val >= 0 else "#ff3b30"
+        pnl_prefix = "+" if pnl_val >= 0 else ""
         
         monitor_rows = ""
         for data in self.dashboard_data:
@@ -240,7 +237,7 @@ class WhaleQuantEngine:
                 <td><span id='price-{clean_sym}' class='price-ticker'>$0.00</span></td>
                 <td><span id='change-{clean_sym}' class='badge-glow'>0.00%</span></td>
                 <td><span class='badge-metric'>RSI: {data['rsi']}</span></td>
-                <td style='color: #c5d4e2;'>${data['entry']}</td>
+                <td style='color: #cbd5e1;'>${data['entry']}</td>
                 <td><span class='status-pill {sig_class}'>{data['signal']}</span></td>
                 <td style='color: #00b574;'>${data['tp']}</td>
                 <td style='color: #ff3b30;'>${data['sl']}</td>
@@ -258,7 +255,7 @@ class WhaleQuantEngine:
                 </tr>"""
 
         history_rows = ""
-        for t in reversed(self.state.get("trades", []))[:8]: # Limit to last 8 trades for clean layout
+        for t in reversed(self.state.get("trades", []))[:8]:
             t_color = "#00b574" if t["pnl"] >= 0 else "#ff3b30"
             badge_type = "history-buy" if t["side"] == "BUY" else "history-sell"
             history_rows += f"""
@@ -324,7 +321,7 @@ class WhaleQuantEngine:
             </div>
             <div class="stat-card">
                 <div class="stat-label">Realized Net Returns</div>
-                <div class="stat-value" style="color: {pnl_color};">${pnl_val >= 0 ? '+' : ''}{pnl_val} USD</div>
+                <div class="stat-value" style="color: {pnl_color};">{pnl_prefix}{pnl_val} USD</div>
             </div>
         </div>
 
@@ -397,4 +394,4 @@ class WhaleQuantEngine:
 if __name__ == "__main__":
     engine = WhaleQuantEngine()
     engine.run_pipeline()
-                    
+    
