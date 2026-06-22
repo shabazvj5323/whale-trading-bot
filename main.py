@@ -24,7 +24,7 @@ class WhaleQuantEngine:
         self.atr_period = 10
         
         self.history_file = "history.json"
-        self.state = self.load_and_clean_history()  # Filters out old simulation data, keeps fresh scalps
+        self.state = self.load_and_clean_history()  # Keeps fresh scalping trades, removes old junk
         self.dashboard_data = []
         
         api_key = os.getenv("BINANCE_API_KEY")
@@ -53,7 +53,7 @@ class WhaleQuantEngine:
         return ist_now.strftime("%m-%d %H:%M")
 
     def load_and_clean_history(self):
-        """Purani wild simulation history delete karega aur abhi ke fresh scalps ko save rakhega"""
+        """Purane massive bad simulated trades hatayega, par recent fresh scalps ko save rakhega"""
         default_state = {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
         
         if os.path.exists(self.history_file):
@@ -62,10 +62,10 @@ class WhaleQuantEngine:
                     data = json.load(f)
                     
                 if "trades" in data:
-                    # Filter: Sirf abhi wale fresh scalp trades rakhega (bade simulated -3186 aur anomalies ko delete karega)
+                    # Filter: Jo abhi ke genuine Scalp TP wale positive/recent trades hain unhe safe rakhega
                     fresh_trades = [
                         t for t in data["trades"] 
-                        if float(t.get("pnl", 0)) > -300.0 and ("Scalp" in t.get("result", "") or "TP" in t.get("result", ""))
+                        if float(t.get("pnl", 0)) > -200.0 and ("Scalp" in t.get("result", "") or "TP" in t.get("result", ""))
                     ]
                     data["trades"] = fresh_trades
                     data["total_pnl"] = sum(float(t.get("pnl", 0)) for t in fresh_trades)
@@ -263,7 +263,7 @@ class WhaleQuantEngine:
                 <tr id='row-{clean_sym}'>
                     <td style='color: #ffffff; font-weight: 600;'>{sym}</td>
                     <td><span id='price-{clean_sym}' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-{change_sym}' class='badge-glow'>0.00%</span></td>
+                    <td><span id='change-{clean_sym}' class='badge-glow'>0.00%</span></td>
                     <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
                 </tr>"""
 
