@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="30">
-    <title>WhaleTrader Pro Quantum Terminal</title>
+    <title>WhaleTrader Pro Live Terminal</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
@@ -14,12 +13,15 @@
         table { width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 35px; overflow: hidden; }
         th, td { padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; font-size: 14px; }
         th { background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+        tr { transition: background-color 0.3s; }
         tr:hover { background-color: #1f2630; }
-        .price-text { font-family: monospace; font-size: 15px; font-weight: bold; }
-        .change-badge { font-family: monospace; font-size: 13px; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
-        .price-up { color: #26a69a; background-color: rgba(38, 166, 154, 0.15); }
-        .price-down { color: #ef5350; background-color: rgba(239, 83, 80, 0.15); }
-        .price-stable { color: #ffffff; background-color: #2b3139; }
+        .font-mono { font-family: monospace; font-size: 15px; font-weight: bold; }
+        .price-text { color: #ffffff; padding: 3px 6px; border-radius: 4px; }
+        .change-badge { padding: 3px 8px; border-radius: 4px; font-size: 13px; }
+        .text-up { color: #26a69a !important; }
+        .text-down { color: #ef5350 !important; }
+        .bg-up { background-color: rgba(38, 166, 154, 0.15); }
+        .bg-down { background-color: rgba(239, 83, 80, 0.15); }
         .signal-badge { padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .buy-bg { background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }
         .sell-bg { background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }
@@ -30,33 +32,44 @@
 <body>
     <div class="container">
         <header>
-            <h1>🐋 WhaleTrader Pro Terminal</h1>
-            <div style="color: #848e9c;">Next Auto-Sync Active | Last Refresh: <b style="color: #f0b90b;">2026-06-22 01:48:36 PM (IST)</b></div>
+            <h1>🐋 WhaleTrader Pro Live Terminal</h1>
+            <div style="color: #848e9c;">Quantum Engine Last Scan: <b style="color: #f0b90b;">2026-06-22 02:04:22 PM (IST)</b></div>
         </header>
         
         <div class="pnl-box">
             <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Portfolio Net P&L</span>
-            <h2 style="margin: 5px 0 0 0; color: #ef5350; font-size: 32px;">$-317.16 USD</h2>
+            <h2 style="margin: 5px 0 0 0; color: #ef5350; font-size: 32px;">$-272.67 USD</h2>
         </div>
 
-        <h3>🟢 Active Orders & Live Positions Monitor</h3>
+        <h3>🟢 Active Orders & Streaming Price Monitor (Live)</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Market Pair</th><th>Live Price</th><th>Price Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
+                    <th>Market Pair</th><th>Live Running Price</th><th>24h Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
                 </tr>
             </thead>
             <tbody>
-            <tr>
+            <tr id='row-btcusdt'>
                 <td><b>BTC/USDT</b></td>
-                <td><span class='price-text'>$66014.52</span></td>
-                <td><span class='change-badge price-stable'>0.00 (0.00%)</span></td>
-                <td><span class='trending-badge'>TRENDING (ADX: 42.57)</span></td>
-                <td>28.03</td>
-                <td><b>$66014.52</b></td>
+                <td><span id='price-btcusdt' class='price-text font-mono'>$0.00</span></td>
+                <td><span id='change-btcusdt' class='change-badge font-mono'>0.00 (0.00%)</span></td>
+                <td><span class='trending-badge'>TRENDING (ADX: 91.29)</span></td>
+                <td>20.29</td>
+                <td><b>$64175.85</b></td>
                 <td><span class='signal-badge sell-bg'>HOLD SELL</span></td>
-                <td style='color: #26a69a; font-weight:bold;'>$65124.76</td>
-                <td style='color: #ef5350; font-weight:bold;'>$66441.61</td>
+                <td style='color: #26a69a; font-weight:bold;'>$63542.71</td>
+                <td style='color: #ef5350; font-weight:bold;'>$64479.76</td>
+            </tr>
+            <tr id='row-ethusdt'>
+                <td><b>ETH/USDT</b></td>
+                <td><span id='price-ethusdt' class='price-text font-mono'>$0.00</span></td>
+                <td><span id='change-ethusdt' class='change-badge font-mono'>0.00 (0.00%)</span></td>
+                <td><span class='trending-badge'>TRENDING (ADX: 34.76)</span></td>
+                <td>24.86</td>
+                <td><b>$392.19</b></td>
+                <td><span class='signal-badge sell-bg'>HOLD SELL</span></td>
+                <td style='color: #26a69a; font-weight:bold;'>$-649.13</td>
+                <td style='color: #ef5350; font-weight:bold;'>$892.02</td>
             </tr></tbody>
         </table>
 
@@ -68,6 +81,15 @@
                 </tr>
             </thead>
             <tbody>
+            <tr>
+                <td>2026-06-22 14:04 IST</td>
+                <td><b>BTC/USDT</b></td>
+                <td>SELL</td>
+                <td>$66014.52</td>
+                <td>$65124.76</td>
+                <td><span style='color:#26a69a'>TP Hit 🎯</span></td>
+                <td style='color: #26a69a; font-weight: bold;'>$44.49 USD</td>
+            </tr>
             <tr>
                 <td>2026-06-22 13:48 IST</td>
                 <td><b>ETH/USDT</b></td>
@@ -97,5 +119,47 @@
             </tr></tbody>
         </table>
     </div>
+
+    <script>
+        const symbols = ['btcusdt', 'ethusdt'];
+        
+        function connectLiveTicker() {
+            const wsUrl = "wss://stream.binance.com:9443/ws/" + symbols.map(s => s + "@ticker").join("/");
+            const ws = new WebSocket(wsUrl);
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                const sym = data.s.toLowerCase();
+                
+                const priceEl = document.getElementById("price-" + sym);
+                const changeEl = document.getElementById("change-" + sym);
+                
+                if (priceEl && changeEl) {
+                    const price = parseFloat(data.c).toFixed(2);
+                    const changeAmt = parseFloat(data.p).toFixed(2);
+                    const changePct = parseFloat(data.P).toFixed(2);
+                    
+                    priceEl.innerText = "$" + price;
+                    
+                    if (parseFloat(changePct) >= 0) {
+                        changeEl.innerText = "+" + changeAmt + " (+" + changePct + "%)";
+                        changeEl.className = "change-badge font-mono text-up bg-up";
+                        priceEl.className = "price-text font-mono text-up";
+                    } else {
+                        changeEl.innerText = changeAmt + " (" + changePct + "%)";
+                        changeEl.className = "change-badge font-mono text-down bg-down";
+                        priceEl.className = "price-text font-mono text-down";
+                    }
+                }
+            };
+            
+            ws.onclose = () => {
+                setTimeout(connectLiveTicker, 5000);
+            };
+        }
+        
+        connectLiveTicker();
+        setTimeout(() => { window.location.reload(); }, 300000);
+    </script>
 </body>
 </html>
