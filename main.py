@@ -225,7 +225,7 @@ class WhaleQuantEngine:
 
         return "WAIT"
 
-         def generate_html_dashboard(self):
+    def generate_html_dashboard(self):
         now_str = self.get_ist_time_str()
         pnl_val = round(self.state.get("total_pnl", 0.0), 2)
         current_wallet = round(self.initial_capital + pnl_val, 2)
