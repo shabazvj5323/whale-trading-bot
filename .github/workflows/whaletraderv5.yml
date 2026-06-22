@@ -1,7 +1,9 @@
-name: WhaleTrader Fresh Pipeline
+name: WhaleTrader Automated Demo Pipeline
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'  # Yeh har 15 minute mein automatically background mein chalega
 
 jobs:
   execute-core:
@@ -17,43 +19,61 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install Trading Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ccxt requests
+
       - name: Force Execute Main
+        env:
+          BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+          BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
         run: |
           python -c '
           import time
           import math
           import random
           import logging
+          import os
+          import ccxt
 
           logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
           log = logging.getLogger("WhaleTrader")
 
-          SYMBOLS = ["BTCUSDT", "ETHUSDT", "XAUUSDT", "XAGUSDT"]
+          SYMBOLS = ["BTCUSDT", "ETHUSDT"] # Demo par testing ke liye major pairs
           VOLUME_MULTIPLIER = 2.5
           RSI_PERIOD = 14
           BB_PERIOD = 20
           BB_STD_DEV = 2
 
+          # Binance Futures Testnet (Demo) Connection Setup
+          api_key = os.getenv("BINANCE_API_KEY", "mock_key")
+          secret_key = os.getenv("BINANCE_SECRET_KEY", "mock_secret")
+
+          exchange = ccxt.binance({
+              "apiKey": api_key,
+              "secret": secret_key,
+              "enableRateLimit": True,
+              "options": {"defaultType": "future"} # Futures Testnet
+          })
+          exchange.set_sandbox_mode(True) # Force Demo Account Environment
+
           def generate_dynamic_market_feed(symbol):
               t = time.time()
               seed = sum(ord(c) for c in symbol) + int(t)
               random.seed(seed)
-              
-              base_prices = {"BTCUSDT": 67250.0, "ETHUSDT": 3540.0, "XAUUSDT": 2340.0, "XAGUSDT": 29.5}
+              base_prices = {"BTCUSDT": 67250.0, "ETHUSDT": 3540.0}
               base_p = base_prices.get(symbol, 100.0)
-              
               candles = []
               current_price = base_p
-              for i in range(60): # 60 candles taaki BBands ka 20 period sahi se calculate ho
+              for i in range(60):
                   change = current_price * random.uniform(-0.004, 0.004)
                   open_p = current_price
                   close_p = current_price + change
                   current_price = close_p
-                  
                   vol = 20000.0 * random.uniform(0.5, 1.8)
                   if i == 59 and random.choice([True, False]):  
                       vol = vol * random.uniform(2.6, 3.5)
-                      
                   candles.append({"o": open_p, "c": close_p, "v": vol})
               return candles, current_price
 
@@ -75,39 +95,45 @@ jobs:
               sma = sum(recent_prices) / period
               variance = sum((x - sma) ** 2 for x in recent_prices) / period
               std_dev = math.sqrt(variance)
-              upper_band = sma + (std_dev_mult * std_dev)
-              lower_band = sma - (std_dev_mult * std_dev)
-              return upper_band, sma, lower_band
+              return sma + (std_dev_mult * std_dev), sma, sma - (std_dev_mult * std_dev)
+
+          def execute_demo_order(symbol, side, amount=0.01):
+              if api_key == "mock_key" or secret_key == "mock_secret":
+                  log.info(f"[MOCK ORDER] Keys missing. Would place {side} order for {amount} {symbol} on Binance Demo Page.")
+                  return
+              try:
+                  # Real API call to Binance Testnet
+                  order = exchange.create_market_order(symbol, side, amount)
+                  log.info(f"[BINANCE DEMO SUCCESS] Order Placed! ID: {order['id']} | Side: {side} | Status: {order['status']}")
+              except Exception as e:
+                  log.error(f"[BINANCE DEMO ERROR] Failed to punch trade: {str(e)}")
 
           def extract_bbands_signals(candles):
               closes = [c["c"] for c in candles]
               volumes = [c["v"] for c in candles]
-              
               current_price = closes[-1]
               current_volume = volumes[-1]
               avg_volume = sum(volumes[-21:-1]) / 20
-              
               rsi = calculate_rsi(closes, RSI_PERIOD)
               upper_b, m_band, lower_b = calculate_bollinger_bands(closes, BB_PERIOD, BB_STD_DEV)
-              
               volume_breakout = current_volume > (avg_volume * VOLUME_MULTIPLIER)
               
-              # Core BBands Strategy Integration
-              # BUY: Price breaks or touches Lower Band + Volume Breakout + RSI Oversold condition
               if volume_breakout and current_price <= lower_b and rsi < 40:
                   return "BUY", rsi, upper_b, lower_b
-              # SELL: Price breaks or touches Upper Band + Volume Breakout + RSI Overbought condition
               elif volume_breakout and current_price >= upper_b and rsi > 60:
                   return "SELL", rsi, upper_b, lower_b
-                  
               return "WAIT", rsi, upper_b, lower_b
 
-          log.info("WhaleTrader Pro V5 BBands + RSI Hybrid Engine Booted.")
+          log.info("WhaleTrader Pro V5 Automated Demo Engine Active.")
           for symbol in SYMBOLS:
               log.info(f"--- Evaluating Matrix Array: {symbol} ---")
               candles, price = generate_dynamic_market_feed(symbol)
               signal, rsi, upper, lower = extract_bbands_signals(candles)
-              log.info(f"{symbol} Price: {round(price, 2)} | BB-Upper: {round(upper, 2)} | BB-Lower: {round(lower, 2)}")
-              log.info(f"{symbol} Metrics -> RSI: {round(rsi, 2)} | Engine Signal: {signal}")
+              log.info(f"{symbol} Price: {round(price, 2)} | BB-Upper: {round(upper, 2)} | BB-Lower: {round(lower, 2)} | RSI: {round(rsi, 2)}")
+              
+              if signal in ["BUY", "SELL"]:
+                  log.info(f"🚀 Breakout Detected! Signal: {signal}. Triggering Binance Testnet Engine...")
+                  execute_demo_order(symbol, signal.lower())
+              else:
+                  log.info(f"{symbol} Signal: WAIT (No Execution)")
           '
-          
