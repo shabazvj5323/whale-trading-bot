@@ -41,4 +41,5 @@ jobs:
         with:
           commit_message: "System Analytics: Database Ledger & HTML State Sync [Skip CI]"
           file_pattern: 'index.html history.json'
+          push_options: '--force'
           
