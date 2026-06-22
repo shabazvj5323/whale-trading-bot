@@ -230,7 +230,7 @@ class WhaleQuantEngine:
                 
                 status_data = {
                     "symbol": symbol, "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
-                    "signal": "HOLD SELL", "tp": tp, "sl": sl
+                    "signal": "HOLD SELL", "entry": current_price, "tp": tp, "sl": sl
                 }
                 self.dashboard_data.append(status_data)
                 return "SELL", current_price, tp, sl
@@ -260,10 +260,10 @@ class WhaleQuantEngine:
             clean_sym = data['symbol'].replace("/", "").lower()
             
             monitor_rows += f"""
-            <tr id="row-{clean_sym}">
+            <tr id='row-{clean_sym}'>
                 <td><b>{data['symbol']}</b></td>
-                <td><span id="price-{clean_sym}" class="price-text font-mono">$0.00</span></td>
-                <td><span id="change-{clean_sym}" class="change-badge font-mono">0.00 (0.00%)</span></td>
+                <td><span id='price-{clean_sym}' class='price-text font-mono'>$0.00</span></td>
+                <td><span id='change-{clean_sym}' class='change-badge font-mono'>0.00 (0.00%)</span></td>
                 <td><span class='{reg_class}'>{data['regime']} (ADX: {data['adx']})</span></td>
                 <td>{data['rsi']}</td>
                 <td><b>${data['entry']}</b></td>
@@ -273,15 +273,14 @@ class WhaleQuantEngine:
             </tr>"""
 
         if not monitor_rows:
-            # Agar koi position active nahi hai, tab bhi hum ticker ko live rates dikhane ke liye base blocks bana dete hain
-            for sym, base in [("BTC/USDT", "btc_row"), ("ETH/USDT", "eth_row")]:
+            for sym in ["BTC/USDT", "ETH/USDT"]:
                 clean_sym = sym.replace("/", "").lower()
                 monitor_rows += f"""
-                <tr id="row-{clean_sym}">
+                <tr id='row-{clean_sym}'>
                     <td><b>{sym}</b></td>
-                    <td><span id="price-{clean_sym}" class="price-text font-mono">$0.00</span></td>
-                    <td><span id="change-{clean_sym}" class="change-badge font-mono">0.00 (0.00%)</span></td>
-                    <td colspan="6" style="color: #848e9c; text-align: center; font-size:12px;">🚫 Strategy Mode: Standby (Scanning Order Book...)</td>
+                    <td><span id='price-{clean_sym}' class='price-text font-mono'>$0.00</span></td>
+                    <td><span id='change-{clean_sym}' class='change-badge font-mono'>0.00 (0.00%)</span></td>
+                    <td colspan='6' style='color: #848e9c; text-align: center; font-size:12px;'>🚫 Strategy Mode: Standby (Scanning Order Book...)</td>
                 </tr>"""
 
         history_rows = ""
@@ -363,7 +362,6 @@ class WhaleQuantEngine:
     </div>
 
     <script>
-        // Binance API WebSocket/Ticker Connection Engine
         const symbols = ['btcusdt', 'ethusdt'];
         
         function connectLiveTicker() {{
@@ -372,7 +370,7 @@ class WhaleQuantEngine:
             
             ws.onmessage = (event) => {{
                 const data = JSON.parse(event.data);
-                const sym = data.s.toLowerCase(); // btcusdt or ethusdt
+                const sym = data.s.toLowerCase();
                 
                 const priceEl = document.getElementById("price-" + sym);
                 const changeEl = document.getElementById("change-" + sym);
@@ -397,13 +395,11 @@ class WhaleQuantEngine:
             }};
             
             ws.onclose = () => {{
-                setTimeout(connectLiveTicker, 5000); // Auto reconnect engine
+                setTimeout(connectLiveTicker, 5000);
             }};
         }}
         
         connectLiveTicker();
-        
-        // Auto page reloader every 5 minutes just to fetch backend python signals
         setTimeout(() => {{ window.location.reload(); }}, 300000);
     </script>
 </body>
@@ -420,4 +416,7 @@ class WhaleQuantEngine:
             self.evaluate_signals(symbol, opens, highs, lows, closes, volumes)
         self.generate_html_dashboard()
 
-if __name__ == "__main
+if __name__ == "__main__":
+    engine = WhaleQuantEngine()
+    engine.run_pipeline()
+    
