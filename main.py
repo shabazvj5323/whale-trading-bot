@@ -5,7 +5,7 @@ import os
 import json
 import ccxt
 import numpy as np
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
 log = logging.getLogger("WhaleTrader_Ultra_Quant")
@@ -38,6 +38,18 @@ class WhaleQuantEngine:
                 "options": {"defaultType": "future"}
             })
             self.exchange.set_sandbox_mode(True)
+
+    def get_ist_time_str(self):
+        """Calculates exact Indian Standard Time (IST) from UTC"""
+        utc_now = datetime.utcnow()
+        ist_now = utc_now + timedelta(hours=5, minutes=30)
+        return ist_now.strftime("%Y-%m-%d %I:%M:%S %p (IST)")
+
+    def get_ist_short_str(self):
+        """Short time format for ledger logs"""
+        utc_now = datetime.utcnow()
+        ist_now = utc_now + timedelta(hours=5, minutes=30)
+        return ist_now.strftime("%Y-%m-%d %H:%M")
 
     def load_history(self):
         if os.path.exists(self.history_file):
@@ -113,7 +125,6 @@ class WhaleQuantEngine:
         return rsi, upper_band, sma, lower_band, atr, adx
 
     def check_active_positions(self, symbol, current_price):
-        """Checks if active simulation positions hit TP or SL"""
         if symbol in self.state["active_positions"]:
             pos = self.state["active_positions"][symbol]
             side = pos["side"]
@@ -147,7 +158,7 @@ class WhaleQuantEngine:
             if hit:
                 self.state["total_pnl"] += pnl
                 trade_record = {
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "time": self.get_ist_short_str(),
                     "symbol": symbol, "side": side.upper(), "entry": entry,
                     "exit": tp if "TP" in reason else sl, "pnl": round(pnl, 2), "result": reason
                 }
@@ -226,7 +237,7 @@ class WhaleQuantEngine:
         return "WAIT", current_price, 0, 0
 
     def generate_html_dashboard(self):
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
+        now_str = self.get_ist_time_str()
         pnl_val = round(self.state.get("total_pnl", 0.0), 2)
         pnl_color = "#26a69a" if pnl_val >= 0 else "#ef5350"
         
@@ -250,7 +261,7 @@ class WhaleQuantEngine:
             t_color = "#26a69a" if t["pnl"] >= 0 else "#ef5350"
             history_rows += f"""
             <tr>
-                <td>{t['time']}</td>
+                <td>{t['time']} IST</td>
                 <td><b>{t['symbol']}</b></td>
                 <td>{t['side']}</td>
                 <td>${t['entry']}</td>
@@ -286,7 +297,7 @@ class WhaleQuantEngine:
     <div class="container">
         <header>
             <h1>🐋 WhaleTrader Quant Live Terminal</h1>
-            <div style="color: #848e9c;">Last Scan: <b>{now_str}</b></div>
+            <div style="color: #848e9c;">Last Scan: <b style="color: #f0b90b;">{now_str}</b></div>
         </header>
         
         <div class="pnl-box">
@@ -331,4 +342,4 @@ class WhaleQuantEngine:
 if __name__ == "__main__":
     engine = WhaleQuantEngine()
     engine.run_pipeline()
-        
+    
