@@ -1,6 +1,13 @@
 {
-    "total_pnl": 0.10010200129276817,
-    "active_positions": {},
+    "total_pnl": 0.1,
+    "active_positions": {
+        "ETH/USDT": {
+            "side": "sell",
+            "entry": 1758.76,
+            "tp": 1756.19,
+            "sl": 1760.05
+        }
+    },
     "trades": [
         {
             "time": "06-23 00:31",
@@ -13,8 +20,8 @@
         }
     ],
     "last_prices": {
-        "BTC/USDT": 63959.21,
-        "ETH/USDT": 1737.55,
-        "PAXG/USDT": 4187.05
+        "BTC/USDT": 63904.98,
+        "ETH/USDT": 1758.76,
+        "PAXG/USDT": 4205.01
     }
 }
