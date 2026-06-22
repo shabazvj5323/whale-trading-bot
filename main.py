@@ -40,13 +40,11 @@ class WhaleQuantEngine:
             self.exchange.set_sandbox_mode(True)
 
     def get_ist_time_str(self):
-        """Calculates exact Indian Standard Time (IST) from UTC"""
         utc_now = datetime.utcnow()
         ist_now = utc_now + timedelta(hours=5, minutes=30)
         return ist_now.strftime("%Y-%m-%d %I:%M:%S %p (IST)")
 
     def get_ist_short_str(self):
-        """Short time format for ledger logs"""
         utc_now = datetime.utcnow()
         ist_now = utc_now + timedelta(hours=5, minutes=30)
         return ist_now.strftime("%Y-%m-%d %H:%M")
@@ -55,10 +53,13 @@ class WhaleQuantEngine:
         if os.path.exists(self.history_file):
             try:
                 with open(self.history_file, "r") as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    if "last_prices" not in data:
+                        data["last_prices"] = {}
+                    return data
             except Exception:
                 pass
-        return {"total_pnl": 0.0, "active_positions": {}, "trades": []}
+        return {"total_pnl": 0.0, "active_positions": {}, "trades": [], "last_prices": {}}
 
     def save_history(self):
         with open(self.history_file, "w") as f:
@@ -169,7 +170,7 @@ class WhaleQuantEngine:
 
     def evaluate_signals(self, symbol, opens, highs, lows, closes, volumes):
         rsi, upper_b, sma, lower_b, atr, adx = self.calculate_indicators(opens, highs, lows, closes, volumes)
-        current_price = closes[-1]
+        current_price = round(closes[-1], 2)
         current_volume = volumes[-1]
         avg_volume = np.mean(volumes[-21:-1])
         volume_breakout = current_volume > (avg_volume * self.volume_multiplier)
@@ -177,26 +178,38 @@ class WhaleQuantEngine:
         market_regime = "TRENDING" if adx > 25 else "RANGING"
         self.check_active_positions(symbol, current_price)
         
-        is_active = symbol in self.state["active_positions"]
-        active_display = "IN POSITION" if is_active else "STANDBY"
+        # Calculate EXACT Metrics Delta (Price up/down values)
+        old_price = self.state["last_prices"].get(symbol, current_price)
+        price_diff = round(current_price - old_price, 2)
+        pct_diff = round((price_diff / (old_price if old_price > 0 else 1)) * 100, 2)
         
-        status_data = {
-            "symbol": symbol, "price": round(current_price, 2), "adx": round(adx, 2),
-            "regime": market_regime, "rsi": round(rsi, 2), "upper": round(upper_b, 2),
-            "lower": round(lower_b, 2), "signal": active_display, "tp": 0, "sl": 0
-        }
+        if price_diff > 0:
+            change_str = f"+${price_diff} (+{pct_diff}%)"
+            trend_class = "price-up"
+        elif price_diff < 0:
+            change_str = f"-${abs(price_diff)} ({pct_diff}%)"
+            trend_class = "price-down"
+        else:
+            change_str = "0.00 (0.00%)"
+            trend_class = "price-stable"
+            
+        self.state["last_prices"][symbol] = current_price
+        self.save_history()
+
+        is_active = symbol in self.state["active_positions"]
         
         if is_active:
-            status_data.update({
-                "signal": f"HOLD {self.state['active_positions'][symbol]['side'].upper()}",
-                "tp": self.state["active_positions"][symbol]["tp"],
-                "sl": self.state["active_positions"][symbol]["sl"]
-            })
+            pos_details = self.state["active_positions"][symbol]
+            status_data = {
+                "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
+                "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                "signal": f"HOLD {pos_details['side'].upper()}", "entry": pos_details['entry'],
+                "tp": pos_details["tp"], "sl": pos_details["sl"]
+            }
             self.dashboard_data.append(status_data)
             return "WAIT", current_price, 0, 0
 
         if not volume_breakout:
-            self.dashboard_data.append(status_data)
             return "WAIT", current_price, 0, 0
 
         qty = 0.05 if "BTC" in symbol else 0.5
@@ -204,36 +217,55 @@ class WhaleQuantEngine:
         if market_regime == "RANGING":
             if current_price <= lower_b and rsi < 42:
                 tp, sl = round(current_price + (atr * 2.0), 2), round(current_price - (atr * 1.5), 2)
-                status_data.update({"signal": "BUY Triggered", "tp": tp, "sl": sl})
-                self.state["active_positions"][symbol] = {"side": "buy", "entry": round(current_price, 2), "tp": tp, "sl": sl, "qty": qty}
+                self.state["active_positions"][symbol] = {"side": "buy", "entry": current_price, "tp": tp, "sl": sl, "qty": qty}
                 self.save_history()
+                
+                status_data = {
+                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
+                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "signal": "HOLD BUY", "entry": current_price, "tp": tp, "sl": sl
+                }
                 self.dashboard_data.append(status_data)
                 return "BUY", current_price, tp, sl
             elif current_price >= upper_b and rsi > 58:
                 tp, sl = round(current_price - (atr * 2.0), 2), round(current_price + (atr * 1.5), 2)
-                status_data.update({"signal": "SELL Triggered", "tp": tp, "sl": sl})
-                self.state["active_positions"][symbol] = {"side": "sell", "entry": round(current_price, 2), "tp": tp, "sl": sl, "qty": qty}
+                self.state["active_positions"][symbol] = {"side": "sell", "entry": current_price, "tp": tp, "sl": sl, "qty": qty}
                 self.save_history()
+                
+                status_data = {
+                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
+                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "signal": "HOLD SELL", "entry": current_price, "tp": tp, "sl": sl
+                }
                 self.dashboard_data.append(status_data)
                 return "SELL", current_price, tp, sl
         
         elif market_regime == "TRENDING":
             if current_price <= lower_b and rsi < 35:
                 tp, sl = round(current_price - (atr * 2.5), 2), round(current_price + (atr * 1.2), 2)
-                status_data.update({"signal": "SHORT Breakout", "tp": tp, "sl": sl})
-                self.state["active_positions"][symbol] = {"side": "sell", "entry": round(current_price, 2), "tp": tp, "sl": sl, "qty": qty}
+                self.state["active_positions"][symbol] = {"side": "sell", "entry": current_price, "tp": tp, "sl": sl, "qty": qty}
                 self.save_history()
+                
+                status_data = {
+                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
+                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "signal": "HOLD SELL", "entry": current_price, "change": change_str, "class": trend_class, "tp": tp, "sl": sl
+                }
                 self.dashboard_data.append(status_data)
                 return "SELL", current_price, tp, sl
             elif current_price >= upper_b and rsi > 65:
                 tp, sl = round(current_price + (atr * 2.5), 2), round(current_price - (atr * 1.2), 2)
-                status_data.update({"signal": "LONG Breakout", "tp": tp, "sl": sl})
-                self.state["active_positions"][symbol] = {"side": "buy", "entry": round(current_price, 2), "tp": tp, "sl": sl, "qty": qty}
+                self.state["active_positions"][symbol] = {"side": "buy", "entry": current_price, "tp": tp, "sl": sl, "qty": qty}
                 self.save_history()
+                
+                status_data = {
+                    "symbol": symbol, "price": current_price, "change": change_str, "class": trend_class,
+                    "regime": market_regime, "adx": round(adx, 2), "rsi": round(rsi, 2),
+                    "signal": "HOLD BUY", "entry": current_price, "tp": tp, "sl": sl
+                }
                 self.dashboard_data.append(status_data)
                 return "BUY", current_price, tp, sl
 
-        self.dashboard_data.append(status_data)
         return "WAIT", current_price, 0, 0
 
     def generate_html_dashboard(self):
@@ -241,20 +273,27 @@ class WhaleQuantEngine:
         pnl_val = round(self.state.get("total_pnl", 0.0), 2)
         pnl_color = "#26a69a" if pnl_val >= 0 else "#ef5350"
         
-        rows_html = ""
+        monitor_rows = ""
         for data in self.dashboard_data:
-            sig_class = "wait" if "STANDBY" in data["signal"] else ("buy-bg" if "BUY" in data["signal"] or "LONG" in data["signal"] else "sell-bg")
+            sig_class = "buy-bg" if "BUY" in data["signal"] else "sell-bg"
             reg_class = "trending-badge" if data["regime"] == "TRENDING" else "ranging-badge"
-            rows_html += f"""
+            
+            monitor_rows += f"""
             <tr>
                 <td><b>{data['symbol']}</b></td>
                 <td><span class='price-text'>${data['price']}</span></td>
+                <td><span class='change-badge {data['class']}'>{data['change']}</span></td>
                 <td><span class='{reg_class}'>{data['regime']} (ADX: {data['adx']})</span></td>
                 <td>{data['rsi']}</td>
+                <td><b>${data['entry']}</b></td>
                 <td><span class='signal-badge {sig_class}'>{data['signal']}</span></td>
-                <td style='color: #26a69a;'>{data['tp'] if data['tp'] > 0 else '-'}</td>
-                <td style='color: #ef5350;'>{data['sl'] if data['sl'] > 0 else '-'}</td>
+                <td style='color: #26a69a; font-weight:bold;'>${data['tp']}</td>
+                <td style='color: #ef5350; font-weight:bold;'>${data['sl']}</td>
             </tr>"""
+
+        if not monitor_rows:
+            monitor_rows = """<tr><td colspan='9' style='text-align:center; color:#848e9c; padding: 35px; font-size:13px;'>
+            🚫 No Active Positions Open. Scanning order book for institutional whale spikes...</td></tr>"""
 
         history_rows = ""
         for t in reversed(self.state.get("trades", [])):
@@ -266,8 +305,8 @@ class WhaleQuantEngine:
                 <td>{t['side']}</td>
                 <td>${t['entry']}</td>
                 <td>${t['exit']}</td>
-                <td>{t['result']}</td>
-                <td style='color: {t_color}; font-weight: bold;'>${t['pnl']}</td>
+                <td><span style='color:{t_color}'>{t['result']}</span></td>
+                <td style='color: {t_color}; font-weight: bold;'>${t['pnl']} USD</td>
             </tr>"""
 
         html_content = f"""<!DOCTYPE html>
@@ -275,54 +314,60 @@ class WhaleQuantEngine:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhaleTrader Quant Live Terminal</title>
+    <meta http-equiv="refresh" content="30">
+    <title>WhaleTrader Pro Quantum Terminal</title>
     <style>
         body {{ font-family: 'Segoe UI', sans-serif; background-color: #0b0e11; color: #eaecef; margin: 0; padding: 20px; }}
-        .container {{ max-width: 1000px; margin: 0 auto; }}
+        .container {{ max-width: 1200px; margin: 0 auto; }}
         header {{ display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2f3336; padding-bottom: 15px; margin-bottom: 25px; }}
         h1 {{ color: #f0b90b; margin: 0; font-size: 24px; }}
         .pnl-box {{ background: #1e2329; padding: 15px 25px; border-radius: 6px; text-align: center; margin-bottom: 25px; border: 1px solid #2b3139; }}
-        table {{ width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 30px; overflow: hidden; }}
-        th, td {{ padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; }}
-        th {{ background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; }}
+        table {{ width: 100%; border-collapse: collapse; background-color: #161a1e; border-radius: 8px; margin-bottom: 35px; overflow: hidden; }}
+        th, td {{ padding: 14px; text-align: left; border-bottom: 1px solid #2b3139; font-size: 14px; }}
+        th {{ background-color: #1e2329; color: #848e9c; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }}
+        tr:hover {{ background-color: #1f2630; }}
         .price-text {{ font-family: monospace; font-size: 15px; font-weight: bold; }}
+        .change-badge {{ font-family: monospace; font-size: 13px; font-weight: bold; padding: 3px 8px; border-radius: 4px; }}
+        .price-up {{ color: #26a69a; background-color: rgba(38, 166, 154, 0.15); }}
+        .price-down {{ color: #ef5350; background-color: rgba(239, 83, 80, 0.15); }}
+        .price-stable {{ color: #ffffff; background-color: #2b3139; }}
         .signal-badge {{ padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; }}
-        .wait {{ background-color: #2b3139; color: #848e9c; }}
         .buy-bg {{ background-color: rgba(38, 166, 154, 0.2); color: #26a69a; border: 1px solid #26a69a; }}
         .sell-bg {{ background-color: rgba(239, 83, 80, 0.2); color: #ef5350; border: 1px solid #ef5350; }}
-        .trending-badge {{ color: #f0b90b; }} .ranging-badge {{ color: #90caf9; }}
+        .trending-badge {{ color: #f0b90b; font-weight: bold; }} .ranging-badge {{ color: #90caf9; font-weight: bold; }}
+        h3 {{ color: #ffffff; font-weight: 500; border-left: 4px solid #f0b90b; padding-left: 10px; margin-bottom: 15px; }}
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🐋 WhaleTrader Quant Live Terminal</h1>
-            <div style="color: #848e9c;">Last Scan: <b style="color: #f0b90b;">{now_str}</b></div>
+            <h1>🐋 WhaleTrader Pro Terminal</h1>
+            <div style="color: #848e9c;">Next Auto-Sync Active | Last Refresh: <b style="color: #f0b90b;">{now_str}</b></div>
         </header>
         
         <div class="pnl-box">
-            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Account P&L</span>
+            <span style="color: #848e9c; font-size: 14px; text-transform: uppercase;">Total Realized Portfolio Net P&L</span>
             <h2 style="margin: 5px 0 0 0; color: {pnl_color}; font-size: 32px;">${pnl_val} USD</h2>
         </div>
 
-        <h3>📡 Live Market Scan & Active Monitor</h3>
+        <h3>🟢 Active Orders & Live Positions Monitor</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Pair</th><th>Price</th><th>Regime Index</th><th>RSI</th><th>Status</th><th>Target TP</th><th>Stop SL</th>
+                    <th>Market Pair</th><th>Live Price</th><th>Price Change ($ / %)</th><th>Market Regime</th><th>RSI</th><th>Entry Price</th><th>Execution State</th><th>Target TP</th><th>Stop Loss SL</th>
                 </tr>
             </thead>
-            <tbody>{rows_html}</tbody>
+            <tbody>{monitor_rows}</tbody>
         </table>
 
-        <h3>📜 Closed Trades Ledger (P&L History)</h3>
+        <h3>📜 Closed Trades Ledger (Real-Time History)</h3>
         <table>
             <thead>
                 <tr>
-                    <th>Close Time</th><th>Pair</th><th>Side</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Reason</th><th>Profit/Loss</th>
+                    <th>Execution Time</th><th>Market Pair</th><th>Direction</th><th>Entry Price</th><th>Exit Price</th><th>Trigger Status</th><th>Net P&L ($)</th>
                 </tr>
             </thead>
-            <tbody>{history_rows if history_rows else '<tr><td colspan="7" style="text-align:center; color:#848e9c;">No closed transactions yet. System monitoring live targets...</td></tr>'}</tbody>
+            <tbody>{history_rows if history_rows else '<tr><td colspan="7" style="text-align:center; color:#848e9c; padding:20px;">No positions liquidated yet. Scan ongoing...</td></tr>'}</tbody>
         </table>
     </div>
 </body>
