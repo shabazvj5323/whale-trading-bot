@@ -104,7 +104,7 @@ class WhaleEngine:
                 "enableRateLimit": True,
                 "options": {"defaultType": "future"},
             })
-            self.exchange.set_sandbox_mode(True)
+            self.exchange.set_sandbox_mode(False)
 
     # ── History ──────────────────────────────
     def load_history(self):
