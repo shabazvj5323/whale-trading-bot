@@ -1,5 +1,5 @@
 {
-  "total_pnl": 1.4788,
+  "total_pnl": 2.8059,
   "active_positions": {
     "PAXG/USDT": {
       "side": "sell",
@@ -7,33 +7,19 @@
       "tp": 4194.07,
       "sl": 4198.38
     },
-    "BTC/USDT": {
-      "side": "sell",
-      "entry": 64355.214918,
-      "tp": 64276.166959,
-      "sl": 64394.738897,
+    "SOL/USDT": {
+      "side": "buy",
+      "entry": 144.537759,
+      "tp": 144.692307,
+      "sl": 144.460485,
       "margin": 60.0,
       "score": 6,
       "reasons": [
         "VOL 1.7x",
-        "RSI 64.1",
-        "BB-High"
+        "RSI 7.5",
+        "BB-Low"
       ],
-      "time": "06-23 17:14"
-    },
-    "XRP/USDT": {
-      "side": "sell",
-      "entry": 0.523642,
-      "tp": 0.523127,
-      "sl": 0.523899,
-      "margin": 60.0,
-      "score": 6,
-      "reasons": [
-        "VOL 2.9x",
-        "RSI 89.8",
-        "BB-High"
-      ],
-      "time": "06-23 17:14"
+      "time": "06-23 18:18"
     }
   },
   "trades": [
@@ -127,28 +113,50 @@
       "result": "TSL",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-23 18:18",
+      "symbol": "BTC/USDT",
+      "side": "SELL",
+      "entry": 64355.214918,
+      "exit": 64276.166959,
+      "pnl": 0.737,
+      "result": "TP",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-23 18:18",
+      "symbol": "XRP/USDT",
+      "side": "SELL",
+      "entry": 0.523642,
+      "exit": 0.523127,
+      "pnl": 0.5901,
+      "result": "TP",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
-    "BTC/USDT": 64355.214918,
-    "ETH/USDT": 1736.60559,
+    "BTC/USDT": 64591.363739,
+    "ETH/USDT": 1753.992781,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 145.33083,
-    "BNB/USDT": 579.575208,
-    "XRP/USDT": 0.523642,
-    "DOGE/USDT": 0.119988
+    "SOL/USDT": 144.537759,
+    "BNB/USDT": 583.237212,
+    "XRP/USDT": 0.521392,
+    "DOGE/USDT": 0.119406
   },
   "stats": {
-    "total_trades": 5,
-    "wins": 1,
+    "total_trades": 7,
+    "wins": 3,
     "losses": 4,
-    "best_trade": 0.6561,
+    "best_trade": 0.737,
     "worst_trade": -0.3281,
     "daily_pnl": {
-      "2026-06-23": -0.3468
+      "2026-06-23": 0.9803
     },
     "daily_trades": {
-      "2026-06-23": 4
+      "2026-06-23": 6
     }
   }
 }
