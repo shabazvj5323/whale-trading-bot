@@ -6,6 +6,20 @@
       "entry": 4196.94,
       "tp": 4194.07,
       "sl": 4198.38
+    },
+    "BNB/USDT": {
+      "side": "buy",
+      "entry": 579.199513,
+      "tp": 579.832907,
+      "sl": 578.882816,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "VOL 1.4x",
+        "RSI 13.6",
+        "BB-Low"
+      ],
+      "time": "06-23 16:36"
     }
   },
   "trades": [
@@ -58,13 +72,13 @@
     }
   ],
   "last_prices": {
-    "BTC/USDT": 64401.234864,
-    "ETH/USDT": 1752.594351,
+    "BTC/USDT": 63953.126415,
+    "ETH/USDT": 1760.909542,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 144.899687,
-    "BNB/USDT": 581.286634,
-    "XRP/USDT": 0.51765,
-    "DOGE/USDT": 0.119824
+    "SOL/USDT": 144.619519,
+    "BNB/USDT": 579.199513,
+    "XRP/USDT": 0.519626,
+    "DOGE/USDT": 0.120014
   },
   "stats": {
     "total_trades": 1,
@@ -74,6 +88,7 @@
     "worst_trade": -0.054357154227059,
     "daily_pnl": {
       "2026-06-23": -0.05
-    }
+    },
+    "daily_trades": {}
   }
 }
