@@ -1,5 +1,5 @@
 {
-  "total_pnl": 2.8059,
+  "total_pnl": 3.4475,
   "active_positions": {
     "PAXG/USDT": {
       "side": "sell",
@@ -7,19 +7,19 @@
       "tp": 4194.07,
       "sl": 4198.38
     },
-    "SOL/USDT": {
+    "ETH/USDT": {
       "side": "buy",
-      "entry": 144.537759,
-      "tp": 144.692307,
-      "sl": 144.460485,
+      "entry": 1733.005227,
+      "tp": 1734.83674,
+      "sl": 1732.08947,
       "margin": 60.0,
       "score": 6,
       "reasons": [
-        "VOL 1.7x",
-        "RSI 7.5",
+        "VOL 1.4x",
+        "RSI 6.3",
         "BB-Low"
       ],
-      "time": "06-23 18:18"
+      "time": "06-23 19:34"
     }
   },
   "trades": [
@@ -135,28 +135,39 @@
       "result": "TP",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-23 19:34",
+      "symbol": "SOL/USDT",
+      "side": "BUY",
+      "entry": 144.537759,
+      "exit": 144.692307,
+      "pnl": 0.6416,
+      "result": "TP",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
-    "BTC/USDT": 64591.363739,
-    "ETH/USDT": 1753.992781,
+    "BTC/USDT": 63678.44873,
+    "ETH/USDT": 1733.005227,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 144.537759,
-    "BNB/USDT": 583.237212,
-    "XRP/USDT": 0.521392,
-    "DOGE/USDT": 0.119406
+    "SOL/USDT": 146.273683,
+    "BNB/USDT": 581.323322,
+    "XRP/USDT": 0.524444,
+    "DOGE/USDT": 0.120805
   },
   "stats": {
-    "total_trades": 7,
-    "wins": 3,
+    "total_trades": 8,
+    "wins": 4,
     "losses": 4,
     "best_trade": 0.737,
     "worst_trade": -0.3281,
     "daily_pnl": {
-      "2026-06-23": 0.9803
+      "2026-06-23": 1.6219
     },
     "daily_trades": {
-      "2026-06-23": 6
+      "2026-06-23": 7
     }
   }
 }
