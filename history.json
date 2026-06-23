@@ -58,13 +58,13 @@
     }
   ],
   "last_prices": {
-    "BTC/USDT": 64291.404186,
-    "ETH/USDT": 1739.694557,
+    "BTC/USDT": 63863.343861,
+    "ETH/USDT": 1738.701487,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 145.723905,
-    "BNB/USDT": 577.339665,
-    "XRP/USDT": 0.515236,
-    "DOGE/USDT": 0.119725
+    "SOL/USDT": 145.118308,
+    "BNB/USDT": 579.645669,
+    "XRP/USDT": 0.522206,
+    "DOGE/USDT": 0.120307
   },
   "stats": {
     "total_trades": 1,
