@@ -1,5 +1,5 @@
 {
-  "total_pnl": 4.0816,
+  "total_pnl": 4.6806,
   "active_positions": {
     "PAXG/USDT": {
       "side": "sell",
@@ -19,7 +19,7 @@
         "RSI 86.0",
         "BB-High"
       ],
-      "time": "06-23 20:51"
+      "time": "06-23 20:54"
     }
   },
   "trades": [
@@ -157,6 +157,17 @@
       "result": "TP",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-23 20:54",
+      "symbol": "ETH/USDT",
+      "side": "SELL",
+      "entry": 1767.639281,
+      "exit": 1765.874596,
+      "pnl": 0.599,
+      "result": "TP",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
@@ -169,16 +180,16 @@
     "DOGE/USDT": 0.118852
   },
   "stats": {
-    "total_trades": 9,
-    "wins": 5,
+    "total_trades": 10,
+    "wins": 6,
     "losses": 4,
     "best_trade": 0.737,
     "worst_trade": -0.3281,
     "daily_pnl": {
-      "2026-06-23": 2.256
+      "2026-06-23": 2.855
     },
     "daily_trades": {
-      "2026-06-23": 8
+      "2026-06-23": 9
     }
   }
 }
