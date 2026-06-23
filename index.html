@@ -1,184 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhaleTrader Pro Dashboard</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #08090c; color: #cbd5e1; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #1e293b; padding-bottom: 15px; margin-bottom: 25px; }
-        h1 { color: #ffffff; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin: 0; }
-        h1::before { content: ''; display: inline-block; width: 8px; height: 8px; background: #00b574; border-radius: 50%; box-shadow: 0 0 8px #00b574; }
-        .matrix-container { display: flex; gap: 15px; margin-bottom: 25px; }
-        .stat-card { background: #0f111a; border: 1px solid #1e293b; padding: 16px; border-radius: 8px; flex: 1; }
-        .stat-label { color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 4px; }
-        .stat-value { font-size: 24px; font-weight: 700; font-family: monospace; }
-        table { width: 100%; border-collapse: collapse; background-color: #0b0d13; border-radius: 8px; margin-bottom: 25px; overflow: hidden; border: 1px solid #1e293b; }
-        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #1e293b; font-size: 13px; }
-        th { background-color: #0f121a; color: #64748b; font-size: 11px; text-transform: uppercase; font-weight: 600; }
-        tr:hover { background-color: #131722; }
-        .price-ticker { font-family: monospace; font-size: 14px; font-weight: bold; }
-        .badge-glow { font-family: monospace; font-size: 12px; font-weight: 600; padding: 2px 6px; border-radius: 4px; }
-        .text-up { color: #00b574 !important; } .text-down { color: #ff3b30 !important; }
-        .bg-up { background-color: rgba(0, 181, 116, 0.08); } .bg-down { background-color: rgba(255, 59, 48, 0.08); }
-        .status-pill { padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; }
-        .buy-glow { background-color: rgba(0, 181, 116, 0.1); color: #00b574; border: 1px solid rgba(0,181,116,0.3); }
-        .sell-glow { background-color: rgba(255, 59, 48, 0.1); color: #ff3b30; border: 1px solid rgba(255,59,48,0.3); }
-        .hist-pill { padding: 2px 6px; border-radius: 4px; font-weight: 600; font-size: 11px; }
-        .history-buy { background: rgba(0,181,116,0.08); color: #00b574; }
-        .history-sell { background: rgba(255,59,48,0.08); color: #ff3b30; }
-        .badge-metric { color: #38bdf8; background: rgba(56,189,248,0.08); padding: 2px 6px; border-radius: 4px; font-weight: 500; font-size: 12px; }
-        h3 { color: #ffffff; font-size: 14px; font-weight: 600; margin-bottom: 12px; margin-top: 5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WhaleTrader Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg0:#05070f;--bg1:#080c17;--bg2:#0d1322;--bg3:#111827;
+  --border:#1a2540;--border2:#243050;
+  --text:#d1daf0;--muted:#4a6080;--muted2:#2a3a55;
+  --green:#00e676;--green2:#00c853;--red:#ff1744;
+  --blue:#2979ff;--amber:#ffab00;--purple:#7c4dff;
+  --font:'Inter',sans-serif;--mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg0);color:var(--text);font-family:var(--font);font-size:13px;}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg1);}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px;}
+nav{background:rgba(8,12,23,0.97);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.nav-left{display:flex;align-items:center;gap:14px;}
+.logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#fff;}
+.logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#2979ff,#00e676);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.badge-live{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25);font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;display:flex;align-items:center;gap:5px;}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{ 0%{ box-shadow:0 0 0 0 rgba(0,230,118,.5); } 70%{ box-shadow:0 0 0 6px rgba(0,230,118,0); } 100%{ box-shadow:0 0 0 0 rgba(0,230,118,0); } }
+.nav-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.nav-box{font-family:var(--mono);font-size:10px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;white-space:nowrap;}
+.session-badge{font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap;}
+.session-on{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.session-off{background:rgba(255,171,0,.1);color:var(--amber);border:1px solid rgba(255,171,0,.2);}
+.main{max-width:1400px;margin:0 auto;padding:20px 14px;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:11px;margin-bottom:24px;}
+.stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+.c1::before{background:linear-gradient(90deg,var(--blue),var(--purple));}
+.c2::before{background:linear-gradient(90deg,var(--green),var(--green2));}
+.c3::before{background:linear-gradient(90deg,var(--amber),#ff6f00);}
+.c4::before{background:linear-gradient(90deg,#00e676,#00bcd4);}
+.c5::before{background:linear-gradient(90deg,#ff1744,#ff5722);}
+.c6::before{background:linear-gradient(90deg,var(--purple),var(--blue));}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:7px;}
+.stat-value{font-size:22px;font-weight:800;font-family:var(--mono);letter-spacing:-.5px;line-height:1;}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:5px;}
+.mini-bar{background:var(--bg3);border-radius:4px;height:3px;margin-top:8px;}
+.mini-fill{height:3px;border-radius:4px;}
+.sec-head{display:flex;align-items:center;gap:10px;margin:24px 0 11px;}
+.sec-title{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:700;white-space:nowrap;}
+.sec-line{flex:1;height:1px;background:var(--border);}
+.sec-tag{font-size:10px;color:var(--muted);background:var(--bg2);border:1px solid var(--border);padding:2px 8px;border-radius:10px;}
+.chart-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:4px;}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:600;}
+.chart-sub{font-size:11px;color:var(--muted);}
+.tbl-card{background:var(--bg1);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:4px;}
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:var(--bg2);}
+th{padding:10px 13px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 13px;border-bottom:1px solid rgba(26,37,64,.5);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(255,255,255,.015);}
+.sym-cell{font-weight:700;color:#fff;font-size:13px;white-space:nowrap;}
+.live-price{font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;}
+.live-chg{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 7px;border-radius:5px;white-space:nowrap;}
+.chg-up{color:var(--green);background:rgba(0,230,118,.08);}
+.chg-dn{color:var(--red);background:rgba(255,23,68,.08);}
+.reason-cell{color:var(--muted);font-size:11px;}
+.tp-cell{color:var(--green);font-family:var(--mono);font-size:12px;}
+.sl-cell{color:var(--red);font-family:var(--mono);font-size:12px;}
+.mono{font-family:var(--mono);font-size:12px;}
+.muted{color:var(--muted);font-size:11px;}
+.pos{color:var(--green);font-weight:700;}
+.neg{color:var(--red);font-weight:700;}
+.empty-row{text-align:center;color:var(--muted);padding:30px;font-size:12px;}
+.dots{display:flex;gap:3px;margin-bottom:3px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border2);}
+.dotf{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 5px rgba(0,230,118,.5);}
+.score-num{font-size:10px;color:var(--muted);font-family:var(--mono);}
+.pill-buy,.pill-sell,.pill-hold,.pill-scan{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;text-transform:uppercase;white-space:nowrap;display:inline-block;}
+.pill-buy{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.2);}
+.pill-sell{background:rgba(255,23,68,.1);color:var(--red);border:1px solid rgba(255,23,68,.2);}
+.pill-hold{background:rgba(41,121,255,.1);color:var(--blue);border:1px solid rgba(41,121,255,.2);}
+.pill-scan{background:rgba(255,171,0,.08);color:var(--amber);border:1px solid rgba(255,171,0,.15);}
+footer{text-align:center;color:var(--muted2);font-size:10px;padding:22px;letter-spacing:.05em;}
+</style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>WhaleTrader Pro Terminal</h1>
-            <div style="color: #64748b; font-size: 12px; font-weight: 600;">Sync: <span id="clock-sync">2026-06-23 10:10:07 AM</span></div>
-        </header>
-        
-        <div class="matrix-container">
-            <div class="stat-card">
-                <div class="stat-label">Account Equity</div>
-                <div class="stat-value" style="color: #ffffff;">$1001.83 <span style="font-size:12px; color:#64748b;">USD</span></div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Leverage Strategy</div>
-                <div class="stat-value" style="color: #f59e0b;">10x Isolated</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Realized Net Returns</div>
-                <div class="stat-value" style="color: #00b574;">+1.83 USD</div>
-            </div>
-        </div>
 
-        <h3>Active Asset Monitors</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Asset Pair</th><th>Live Price</th><th>24h Delta</th><th>Metrics</th><th>Entry Price</th><th>State</th><th>Take Profit</th><th>Stop Loss</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr id='row-btcusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>BTC/USDT</td>
-                    <td><span id='price-btcusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-btcusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr>
-                <tr id='row-ethusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>ETH/USDT</td>
-                    <td><span id='price-ethusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-ethusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr>
-                <tr id='row-paxgusdt'>
-                    <td style='color: #ffffff; font-weight: 600;'>PAXG/USDT</td>
-                    <td><span id='price-paxgusdt' class='price-ticker'>$0.00</span></td>
-                    <td><span id='change-paxgusdt' class='badge-glow'>0.00%</span></td>
-                    <td colspan='5' style='color: #64748b; text-align: center; font-size:12px; font-weight: 500;'>⚡ SCANNING ENGINE ACTIVE (WAITING FOR VOLATILITY BREAKOUT)</td>
-                </tr></tbody>
-        </table>
-
-        <h3>Settlement Log</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Timestamp</th><th>Asset</th><th>Vector</th><th>Entry</th><th>Exit</th><th>Status</th><th>P&L</th>
-                </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td style='color: #64748b;'>06-23 05:51</td>
-                <td><b>PAXG/USDT</b></td>
-                <td><span class='hist-pill history-sell'>SELL</span></td>
-                <td>$4200.71</td>
-                <td>$4202.11</td>
-                <td style='color:#ff3b30; font-weight:600;'>Scalp SL 🛑</td>
-                <td style='color: #ff3b30; font-weight: bold; font-family: monospace;'>$-0.33</td>
-            </tr>
-            <tr>
-                <td style='color: #64748b;'>06-23 04:36</td>
-                <td><b>PAXG/USDT</b></td>
-                <td><span class='hist-pill history-sell'>SELL</span></td>
-                <td>$4212.22</td>
-                <td>$4198.77</td>
-                <td style='color:#00b574; font-weight:600;'>Scalp TP 🎯</td>
-                <td style='color: #00b574; font-weight: bold; font-family: monospace;'>$0.6</td>
-            </tr>
-            <tr>
-                <td style='color: #64748b;'>06-23 03:05</td>
-                <td><b>ETH/USDT</b></td>
-                <td><span class='hist-pill history-sell'>SELL</span></td>
-                <td>$1758.76</td>
-                <td>$1750.3</td>
-                <td style='color:#00b574; font-weight:600;'>Scalp TP 🎯</td>
-                <td style='color: #00b574; font-weight: bold; font-family: monospace;'>$1.46</td>
-            </tr>
-            <tr>
-                <td style='color: #64748b;'>06-23 00:31</td>
-                <td><b>BTC/USDT</b></td>
-                <td><span class='hist-pill history-sell'>SELL</span></td>
-                <td>$64234.48</td>
-                <td>$64075.98</td>
-                <td style='color:#00b574; font-weight:600;'>Scalp TP 🎯</td>
-                <td style='color: #00b574; font-weight: bold; font-family: monospace;'>$0.1</td>
-            </tr></tbody>
-        </table>
+<nav>
+  <div class="nav-left">
+    <div class="logo">
+      <div class="logo-icon">&#x1F40B;</div>
+      WhaleTrader Pro
     </div>
+    <div class="badge-live"><div class="pulse-dot"></div>LIVE</div>
+  </div>
+  <div class="nav-right">
+    <div class="nav-box">Bot sync: BOT_SYNC_TIME</div>
+    <div class="session-badge" id="sess">LOADING</div>
+    <div class="nav-box" id="clk">-- IST</div>
+  </div>
+</nav>
 
-    <script>
-        const symbols = ['btcusdt', 'ethusdt', 'paxgusdt'];
-        function connectLiveTicker() {
-            const wsUrl = "wss://stream.binance.com:9443/ws/" + symbols.map(s => s + "@ticker").join("/");
-            const ws = new WebSocket(wsUrl);
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                const sym = data.s.toLowerCase();
-                const priceEl = document.getElementById("price-" + sym);
-                const changeEl = document.getElementById("change-" + sym);
-                
-                if (priceEl && changeEl) {
-                    const price = parseFloat(data.c).toFixed(2);
-                    const changePct = parseFloat(data.P).toFixed(2);
-                    priceEl.innerText = "$" + price;
-                    if (parseFloat(changePct) >= 0) {
-                        changeEl.innerText = "+" + changePct + "%";
-                        changeEl.className = "badge-glow text-up bg-up";
-                        priceEl.className = "price-ticker text-up";
-                    } else {
-                        changeEl.innerText = changePct + "%";
-                        changeEl.className = "badge-glow text-down bg-down";
-                        priceEl.className = "price-ticker text-down";
-                    }
-                }
-            };
-            ws.onclose = () => { setTimeout(connectLiveTicker, 4000); };
+<div class="main">
+
+  <div class="stat-grid">
+    <div class="stat-card c1">
+      <div class="stat-label">Account Equity</div>
+      <div class="stat-value" style="color:#fff;">$WALLET_VAL</div>
+      <div class="stat-sub">Started $1,000.00</div>
+      <div class="mini-bar"><div class="mini-fill" style="width:100%;background:var(--blue);"></div></div>
+    </div>
+    <div class="stat-card c2">
+      <div class="stat-label">Total P&amp;L</div>
+      <div class="stat-value" style="color:PNL_COLOR_VAL;">TOTAL_PNL_VAL</div>
+      <div class="stat-sub" style="color:PNL_COLOR_VAL;">PNL_PCT_VAL return</div>
+      <div class="mini-bar"><div class="mini-fill" style="width:55%;background:PNL_COLOR_VAL;"></div></div>
+    </div>
+    <div class="stat-card c3">
+      <div class="stat-label">Win Rate</div>
+      <div class="stat-value" style="color:WR_COLOR_VAL;">WIN_RATE_VAL</div>
+      <div class="stat-sub">WINS_VAL W / LOSSES_VAL L / TOTAL_T_VAL total</div>
+      <div class="mini-bar"><div class="mini-fill" style="width:WIN_RATE_VAL;background:WR_COLOR_VAL;"></div></div>
+    </div>
+    <div class="stat-card c4">
+      <div class="stat-label">Best Trade</div>
+      <div class="stat-value" style="color:var(--green);">BEST_VAL</div>
+      <div class="stat-sub">All time high</div>
+    </div>
+    <div class="stat-card c5">
+      <div class="stat-label">Worst Trade</div>
+      <div class="stat-value" style="color:var(--red);">WORST_VAL</div>
+      <div class="stat-sub">Max drawdown</div>
+    </div>
+    <div class="stat-card c6">
+      <div class="stat-label">Strategy</div>
+      <div class="stat-value" style="color:var(--amber);">10x</div>
+      <div class="stat-sub">Isolated / 6 pairs / 5m</div>
+    </div>
+  </div>
+
+  <div class="sec-head"><div class="sec-title">Daily P&amp;L</div><div class="sec-line"></div><div class="sec-tag">14 days</div></div>
+  <div class="chart-card">
+    <div class="chart-head">
+      <div class="chart-title">Realized Returns Per Day</div>
+      <div class="chart-sub">IST timezone · Paper trading</div>
+    </div>
+    <canvas id="pnlChart" style="max-height:160px;"></canvas>
+  </div>
+
+  <div class="sec-head"><div class="sec-title">Live Asset Monitor</div><div class="sec-line"></div><div class="sec-tag">6 pairs</div></div>
+  <div class="tbl-card"><div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Pair</th><th>Live Price</th><th>24h</th><th>Signal</th><th>Score</th><th>Indicators</th><th>Take Profit</th><th>Stop Loss</th></tr></thead>
+      <tbody>MONITOR_ROWS_VAL</tbody>
+    </table>
+  </div></div>
+
+  <div class="sec-head"><div class="sec-title">Settlement Log</div><div class="sec-line"></div><div class="sec-tag">Last 50 trades</div></div>
+  <div class="tbl-card"><div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Time</th><th>Pair</th><th>Side</th><th>Entry</th><th>Exit</th><th>Result</th><th>P&amp;L</th><th>Score</th><th>Margin</th></tr></thead>
+      <tbody>HISTORY_ROWS_VAL</tbody>
+    </table>
+  </div></div>
+
+</div>
+
+<footer>WhaleTrader Pro &middot; Auto-updates every 15 min &middot; GitHub Actions &middot; Paper Trading &middot; $1,000 Capital</footer>
+
+<script>
+var chartLabels = CHART_LABELS_VAL || [];
+var chartValues = CHART_VALUES_VAL || [];
+var chartColors = CHART_COLORS_VAL || [];
+
+var syms = ['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','dogeusdt'];
+function connectWS() {
+  var ws = new WebSocket("wss://stream.binance.com:9443/ws/" + syms.map(function(s){ return s+"@ticker"; }).join("/"));
+  ws.onmessage = function(e) {
+    var d = JSON.parse(e.data);
+    var s = d.s.toLowerCase();
+    var pe = document.getElementById("p-"+s);
+    var ce = document.getElementById("c-"+s);
+    if (!pe) return;
+    var price = parseFloat(d.c);
+    var chg = parseFloat(d.P);
+    if (price < 1) { pe.textContent = "$" + price.toFixed(5); }
+    else { pe.textContent = "$" + price.toFixed(2); }
+    ce.textContent = (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%";
+    ce.className = "live-chg " + (chg >= 0 ? "chg-up" : "chg-dn");
+    pe.style.color = chg >= 0 ? "var(--green)" : "var(--red)";
+  };
+  ws.onclose = function() { setTimeout(connectWS, 3000); };
+}
+connectWS();
+
+function updateClock() {
+  var now = new Date();
+  var ist = new Date(now.getTime() + 19800000);
+  var h = ist.getUTCHours();
+  var m = ist.getUTCMinutes();
+  var s = ist.getUTCSeconds();
+  var ampm = h >= 12 ? "PM" : "AM";
+  var hh = h % 12 || 12;
+  function pad(n) { return n < 10 ? "0"+n : ""+n; }
+  document.getElementById("clk").textContent = pad(hh)+":"+pad(m)+":"+pad(s)+" "+ampm+" IST";
+  var utcH = now.getUTCHours();
+  var active = (utcH >= 6 && utcH < 10) || (utcH >= 13 && utcH < 18);
+  var badge = document.getElementById("sess");
+  if (active) {
+    badge.textContent = "SESSION ACTIVE";
+    badge.className = "session-badge session-on";
+  } else {
+    badge.textContent = "OFF SESSION";
+    badge.className = "session-badge session-off";
+  }
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+var ctx = document.getElementById("pnlChart").getContext("2d");
+new Chart(ctx, {
+  type: "bar",
+  data: {
+    labels: chartLabels,
+    datasets: [{
+      label: "P&L ($)",
+      data: chartValues,
+      backgroundColor: chartColors,
+      borderRadius: 5,
+      borderSkipped: false
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function(c) {
+            return (c.parsed.y >= 0 ? "+" : "") + "$" + c.parsed.y.toFixed(2);
+          }
         }
+      }
+    },
+    scales: {
+      x: { grid: { color: "rgba(26,37,64,.5)" }, ticks: { color: "#4a6080", font: { size: 10 } } },
+      y: { grid: { color: "rgba(26,37,64,.5)" }, ticks: { color: "#4a6080", font: { size: 10 }, callback: function(v) { return "$"+v; } } }
+    }
+  }
+});
 
-        function startLiveClock() {
-            setInterval(() => {
-                const now = new Date();
-                const options = { hour12: true, hour: '2-digit', minute: '2-digit', second: '2-digit' };
-                const timeStr = now.toLocaleTimeString('en-US', options);
-                
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const dateStr = `${year}-${month}-${day}`;
-                
-                const syncEl = document.getElementById("clock-sync");
-                if (syncEl) {
-                    syncEl.innerText = dateStr + " " + timeStr;
-                }
-            }, 1000);
-        }
-
-        connectLiveTicker();
-        startLiveClock();
-        setTimeout(() => { window.location.reload(); }, 300000);
-    </script>
+setTimeout(function() { window.location.reload(); }, 900000);
+</script>
 </body>
 </html>

@@ -1,60 +1,79 @@
 {
-    "total_pnl": 1.83,
-    "active_positions": {
-        "BTC/USDT": {
-            "side": "buy",
-            "entry": 64204.98,
-            "tp": 64211.96,
-            "sl": 64201.49
-        },
-        "PAXG/USDT": {
-            "side": "sell",
-            "entry": 4196.94,
-            "tp": 4194.07,
-            "sl": 4198.38
-        }
-    },
-    "trades": [
-        {
-            "time": "06-23 00:31",
-            "symbol": "BTC/USDT",
-            "side": "SELL",
-            "entry": 64234.48,
-            "exit": 64075.98,
-            "pnl": 0.1,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-23 03:05",
-            "symbol": "ETH/USDT",
-            "side": "SELL",
-            "entry": 1758.76,
-            "exit": 1750.3,
-            "pnl": 1.46,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-23 04:36",
-            "symbol": "PAXG/USDT",
-            "side": "SELL",
-            "entry": 4212.22,
-            "exit": 4198.77,
-            "pnl": 0.6,
-            "result": "Scalp TP \ud83c\udfaf"
-        },
-        {
-            "time": "06-23 05:51",
-            "symbol": "PAXG/USDT",
-            "side": "SELL",
-            "entry": 4200.71,
-            "exit": 4202.11,
-            "pnl": -0.33,
-            "result": "Scalp SL \ud83d\uded1"
-        }
-    ],
-    "last_prices": {
-        "BTC/USDT": 64204.98,
-        "ETH/USDT": 1756.26,
-        "PAXG/USDT": 4196.94
+  "total_pnl": 1.775642845772941,
+  "active_positions": {
+    "PAXG/USDT": {
+      "side": "sell",
+      "entry": 4196.94,
+      "tp": 4194.07,
+      "sl": 4198.38
     }
+  },
+  "trades": [
+    {
+      "time": "06-23 00:31",
+      "symbol": "BTC/USDT",
+      "side": "SELL",
+      "entry": 64234.48,
+      "exit": 64075.98,
+      "pnl": 0.1,
+      "result": "Scalp TP \ud83c\udfaf"
+    },
+    {
+      "time": "06-23 03:05",
+      "symbol": "ETH/USDT",
+      "side": "SELL",
+      "entry": 1758.76,
+      "exit": 1750.3,
+      "pnl": 1.46,
+      "result": "Scalp TP \ud83c\udfaf"
+    },
+    {
+      "time": "06-23 04:36",
+      "symbol": "PAXG/USDT",
+      "side": "SELL",
+      "entry": 4212.22,
+      "exit": 4198.77,
+      "pnl": 0.6,
+      "result": "Scalp TP \ud83c\udfaf"
+    },
+    {
+      "time": "06-23 05:51",
+      "symbol": "PAXG/USDT",
+      "side": "SELL",
+      "entry": 4200.71,
+      "exit": 4202.11,
+      "pnl": -0.33,
+      "result": "Scalp SL \ud83d\uded1"
+    },
+    {
+      "time": "06-23 10:40",
+      "symbol": "BTC/USDT",
+      "side": "BUY",
+      "entry": 64204.98,
+      "exit": 64201.49,
+      "pnl": -0.05,
+      "result": "SL",
+      "score": 0,
+      "margin": 100.0
+    }
+  ],
+  "last_prices": {
+    "BTC/USDT": 64426.685312,
+    "ETH/USDT": 1746.446239,
+    "PAXG/USDT": 4196.94,
+    "SOL/USDT": 145.026953,
+    "BNB/USDT": 576.840895,
+    "XRP/USDT": 0.522853,
+    "DOGE/USDT": 0.119153
+  },
+  "stats": {
+    "total_trades": 1,
+    "wins": 0,
+    "losses": 1,
+    "best_trade": 0.0,
+    "worst_trade": -0.054357154227059,
+    "daily_pnl": {
+      "2026-06-23": -0.05
+    }
+  }
 }
