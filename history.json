@@ -6,6 +6,20 @@
       "entry": 4196.94,
       "tp": 4194.07,
       "sl": 4198.38
+    },
+    "ETH/USDT": {
+      "side": "sell",
+      "entry": 1767.639281,
+      "tp": 1765.874596,
+      "sl": 1768.521624,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "VOL 1.3x",
+        "RSI 86.0",
+        "BB-High"
+      ],
+      "time": "06-23 20:51"
     }
   },
   "trades": [
@@ -146,13 +160,13 @@
     }
   ],
   "last_prices": {
-    "BTC/USDT": 63927.440811,
-    "ETH/USDT": 1754.537585,
+    "BTC/USDT": 64106.346302,
+    "ETH/USDT": 1767.639281,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 144.334133,
-    "BNB/USDT": 578.255274,
-    "XRP/USDT": 0.520062,
-    "DOGE/USDT": 0.120043
+    "SOL/USDT": 146.940133,
+    "BNB/USDT": 585.772994,
+    "XRP/USDT": 0.519873,
+    "DOGE/USDT": 0.118852
   },
   "stats": {
     "total_trades": 9,
