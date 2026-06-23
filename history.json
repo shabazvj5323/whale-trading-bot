@@ -1,5 +1,5 @@
 {
-  "total_pnl": 2.1036,
+  "total_pnl": 1.7912,
   "active_positions": {
     "PAXG/USDT": {
       "side": "sell",
@@ -19,7 +19,7 @@
         "RSI 73.9",
         "BB-High"
       ],
-      "time": "06-23 17:06"
+      "time": "06-23 17:08"
     }
   },
   "trades": [
@@ -91,6 +91,17 @@
       "result": "SL",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-23 17:08",
+      "symbol": "BNB/USDT",
+      "side": "SELL",
+      "entry": 573.277598,
+      "exit": 573.57612,
+      "pnl": -0.3124,
+      "result": "SL",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
@@ -103,16 +114,16 @@
     "DOGE/USDT": 0.120465
   },
   "stats": {
-    "total_trades": 3,
+    "total_trades": 4,
     "wins": 1,
-    "losses": 2,
+    "losses": 3,
     "best_trade": 0.6561,
     "worst_trade": -0.3281,
     "daily_pnl": {
-      "2026-06-23": 0.278
+      "2026-06-23": -0.0344
     },
     "daily_trades": {
-      "2026-06-23": 2
+      "2026-06-23": 3
     }
   }
 }
