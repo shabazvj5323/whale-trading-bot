@@ -1,39 +1,11 @@
 {
-  "total_pnl": 5.4996,
+  "total_pnl": 5.9077,
   "active_positions": {
     "PAXG/USDT": {
       "side": "sell",
       "entry": 4196.94,
       "tp": 4194.07,
       "sl": 4198.38
-    },
-    "XRP/USDT": {
-      "side": "sell",
-      "entry": 0.52861,
-      "tp": 0.527946,
-      "sl": 0.528942,
-      "margin": 60.0,
-      "score": 6,
-      "reasons": [
-        "VOL 1.1x",
-        "RSI 88.4",
-        "BB-High"
-      ],
-      "time": "06-23 22:00"
-    },
-    "DOGE/USDT": {
-      "side": "sell",
-      "entry": 0.119809,
-      "tp": 0.119672,
-      "sl": 0.119878,
-      "margin": 60.0,
-      "score": 6,
-      "reasons": [
-        "VOL 1.3x",
-        "RSI 81.9",
-        "BB-High"
-      ],
-      "time": "06-23 22:00"
     }
   },
   "trades": [
@@ -204,28 +176,50 @@
       "result": "TSL",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-23 22:11",
+      "symbol": "XRP/USDT",
+      "side": "SELL",
+      "entry": 0.52861,
+      "exit": 0.527946,
+      "pnl": 0.7537,
+      "result": "TP",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-23 22:11",
+      "symbol": "DOGE/USDT",
+      "side": "SELL",
+      "entry": 0.119809,
+      "exit": 0.119878,
+      "pnl": -0.3456,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
-    "BTC/USDT": 64555.326423,
-    "ETH/USDT": 1758.418386,
+    "BTC/USDT": 63917.67868,
+    "ETH/USDT": 1753.362339,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 145.076958,
-    "BNB/USDT": 577.336531,
-    "XRP/USDT": 0.52861,
-    "DOGE/USDT": 0.119809
+    "SOL/USDT": 145.533051,
+    "BNB/USDT": 580.837401,
+    "XRP/USDT": 0.519608,
+    "DOGE/USDT": 0.119608
   },
   "stats": {
-    "total_trades": 12,
-    "wins": 8,
-    "losses": 4,
-    "best_trade": 0.737,
-    "worst_trade": -0.3281,
+    "total_trades": 14,
+    "wins": 9,
+    "losses": 5,
+    "best_trade": 0.7537,
+    "worst_trade": -0.3456,
     "daily_pnl": {
-      "2026-06-23": 3.674
+      "2026-06-23": 4.0821
     },
     "daily_trades": {
-      "2026-06-23": 11
+      "2026-06-23": 13
     }
   }
 }
