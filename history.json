@@ -1,43 +1,62 @@
 {
-  "total_pnl": 325.5974,
+  "total_pnl": 447.8188,
   "active_positions": {
-    "DOGE/USDT": {
+    "SOL/USDT": {
       "side": "buy",
-      "entry": 0.074738,
-      "tp": 0.075709,
-      "sl": 0.07435,
-      "margin": 60.0,
-      "score": 6,
+      "entry": 67.62,
+      "tp": 68.403,
+      "sl": 67.3068,
+      "margin": 80.0,
+      "score": 8,
       "reasons": [
         "SIDEWAYS",
-        "RSI 10.8",
+        "RSI 28.1",
         "BB-Low",
         "SIDEWAYS",
-        "PULLBACK"
+        "PULLBACK",
+        "BULL CANDLE"
       ],
-      "time": "06-24 21:49"
+      "time": "06-24 22:22"
+    },
+    "XRP/USDT": {
+      "side": "buy",
+      "entry": 1.064,
+      "tp": 1.0739,
+      "sl": 1.06004,
+      "margin": 80.0,
+      "score": 8,
+      "reasons": [
+        "SIDEWAYS",
+        "RSI 27.7",
+        "BB-Low",
+        "SIDEWAYS",
+        "PULLBACK",
+        "BULL CANDLE"
+      ],
+      "time": "06-24 22:22"
     },
     "BTC/USDT": {
       "side": "buy",
-      "entry": 60389.0,
-      "tp": 60975.8,
-      "sl": 60154.28,
-      "margin": 60.0,
-      "score": 6,
+      "entry": 60425.0,
+      "tp": 61040.0,
+      "sl": 60179.0,
+      "margin": 80.0,
+      "score": 8,
       "reasons": [
         "SIDEWAYS",
-        "RSI 10.2",
+        "RSI 12.2",
         "BB-Low",
         "SIDEWAYS",
-        "PULLBACK"
+        "PULLBACK",
+        "BULL CANDLE"
       ],
-      "time": "06-24 21:49"
+      "time": "06-24 22:23"
     },
     "BNB/USDT": {
       "side": "buy",
-      "entry": 561.61,
-      "tp": 566.2555,
-      "sl": 559.7518,
+      "entry": 561.6,
+      "tp": 566.5095,
+      "sl": 559.6362,
       "margin": 60.0,
       "score": 6,
       "reasons": [
@@ -47,55 +66,41 @@
         "SIDEWAYS",
         "PULLBACK"
       ],
-      "time": "06-24 21:49"
+      "time": "06-24 22:23"
     },
-    "XRP/USDT": {
+    "DOGE/USDT": {
       "side": "buy",
-      "entry": 1.058,
-      "tp": 1.0673,
-      "sl": 1.05428,
-      "margin": 60.0,
-      "score": 6,
+      "entry": 0.075363,
+      "tp": 0.076352,
+      "sl": 0.074967,
+      "margin": 80.0,
+      "score": 8,
       "reasons": [
         "SIDEWAYS",
-        "RSI 12.7",
+        "RSI 25.1",
         "BB-Low",
         "SIDEWAYS",
-        "PULLBACK"
+        "PULLBACK",
+        "BULL CANDLE"
       ],
-      "time": "06-24 21:49"
+      "time": "06-24 22:23"
     },
     "ETH/USDT": {
       "side": "buy",
-      "entry": 1619.98,
-      "tp": 1638.118,
-      "sl": 1612.7248,
-      "margin": 60.0,
-      "score": 6,
+      "entry": 1629.07,
+      "tp": 1648.3285,
+      "sl": 1621.3666,
+      "margin": 80.0,
+      "score": 8,
       "reasons": [
         "SIDEWAYS",
-        "RSI 16.3",
+        "RSI 30.3",
         "BB-Low",
         "SIDEWAYS",
-        "PULLBACK"
+        "PULLBACK",
+        "BULL CANDLE"
       ],
-      "time": "06-24 21:51"
-    },
-    "SOL/USDT": {
-      "side": "buy",
-      "entry": 67.44,
-      "tp": 68.208,
-      "sl": 67.1328,
-      "margin": 60.0,
-      "score": 6,
-      "reasons": [
-        "SIDEWAYS",
-        "RSI 22.9",
-        "BB-Low",
-        "SIDEWAYS",
-        "PULLBACK"
-      ],
-      "time": "06-24 21:51"
+      "time": "06-24 22:23"
     }
   },
   "trades": [
@@ -1069,30 +1074,96 @@
       "result": "TSL",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-24 22:22",
+      "symbol": "SOL/USDT",
+      "side": "BUY",
+      "entry": 67.44,
+      "exit": 69.8628,
+      "pnl": 21.5552,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-24 22:22",
+      "symbol": "XRP/USDT",
+      "side": "BUY",
+      "entry": 1.058,
+      "exit": 1.10628,
+      "pnl": 24.0,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-24 22:23",
+      "symbol": "BTC/USDT",
+      "side": "BUY",
+      "entry": 60389.0,
+      "exit": 62339.28,
+      "pnl": 19.3772,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-24 22:23",
+      "symbol": "BNB/USDT",
+      "side": "BUY",
+      "entry": 561.61,
+      "exit": 577.5518,
+      "pnl": 17.0315,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-24 22:23",
+      "symbol": "DOGE/USDT",
+      "side": "BUY",
+      "entry": 0.074738,
+      "exit": 0.078437,
+      "pnl": 24.0,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
+    },
+    {
+      "time": "06-24 22:23",
+      "symbol": "ETH/USDT",
+      "side": "BUY",
+      "entry": 1619.98,
+      "exit": 1663.8748,
+      "pnl": 16.2575,
+      "result": "TSL",
+      "score": 6,
+      "margin": 60.0
     }
   ],
   "last_prices": {
-    "BTC/USDT": 60389.0,
-    "ETH/USDT": 1619.98,
+    "BTC/USDT": 60425.0,
+    "ETH/USDT": 1629.07,
     "PAXG/USDT": 4196.94,
-    "SOL/USDT": 67.44,
-    "BNB/USDT": 561.61,
-    "XRP/USDT": 1.058,
-    "DOGE/USDT": 0.074738
+    "SOL/USDT": 67.62,
+    "BNB/USDT": 561.6,
+    "XRP/USDT": 1.064,
+    "DOGE/USDT": 0.075363
   },
   "stats": {
-    "total_trades": 85,
-    "wins": 60,
+    "total_trades": 91,
+    "wins": 66,
     "losses": 25,
-    "best_trade": 21.261,
+    "best_trade": 24.0,
     "worst_trade": -1.4684,
     "daily_pnl": {
       "2026-06-23": 6.684,
-      "2026-06-24": 317.0878
+      "2026-06-24": 439.3092
     },
     "daily_trades": {
       "2026-06-23": 17,
-      "2026-06-24": 67
+      "2026-06-24": 73
     }
   }
 }
