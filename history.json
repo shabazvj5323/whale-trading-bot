@@ -1,73 +1,164 @@
 {
-  "total_pnl": 0.0,
+  "total_pnl": -3.7888,
   "active_positions": {
     "ETH/USDT": {
       "side": "sell",
-      "entry": 1580.82,
-      "tp": 1573.992,
-      "sl": 1583.5512,
+      "entry": 1589.4,
+      "tp": 1581.078,
+      "sl": 1592.7288,
       "margin": 80.0,
       "score": 10,
       "reasons": [
         "BEAR",
-        "RSI 74.9",
+        "RSI 88.3",
         "BB-High",
         "BEAR TREND",
         "PUSHUP",
         "MTF DN"
       ],
-      "time": "06-25 01:25"
+      "time": "06-25 01:31"
+    },
+    "SOL/USDT": {
+      "side": "sell",
+      "entry": 66.88,
+      "tp": 66.388,
+      "sl": 67.0768,
+      "margin": 80.0,
+      "score": 10,
+      "reasons": [
+        "BEAR",
+        "RSI 86.0",
+        "BB-High",
+        "BEAR TREND",
+        "PUSHUP",
+        "MTF DN"
+      ],
+      "time": "06-25 01:31"
+    },
+    "XRP/USDT": {
+      "side": "sell",
+      "entry": 1.0632,
+      "tp": 1.05708,
+      "sl": 1.065648,
+      "margin": 80.0,
+      "score": 12,
+      "reasons": [
+        "BEAR",
+        "RSI 76.2",
+        "BB-High",
+        "EMA DN",
+        "BEAR TREND",
+        "PUSHUP",
+        "MTF DN"
+      ],
+      "time": "06-25 01:31"
+    },
+    "BNB/USDT": {
+      "side": "sell",
+      "entry": 557.8,
+      "tp": 555.655,
+      "sl": 558.658,
+      "margin": 80.0,
+      "score": 10,
+      "reasons": [
+        "BEAR",
+        "RSI 83.8",
+        "BB-High",
+        "BEAR TREND",
+        "PUSHUP",
+        "MTF DN"
+      ],
+      "time": "06-25 01:32"
     },
     "BTC/USDT": {
       "side": "sell",
-      "entry": 59814.5,
-      "tp": 59623.175,
-      "sl": 59891.03,
-      "margin": 80.0,
-      "score": 8,
-      "reasons": [
-        "BEAR",
-        "RSI 65.7",
-        "BEAR TREND",
-        "PUSHUP",
-        "MTF DN"
-      ],
-      "time": "06-25 01:26"
-    },
-    "DOGE/USDT": {
-      "side": "sell",
-      "entry": 0.07404,
-      "tp": 0.073719,
-      "sl": 0.074168,
+      "entry": 60191.8,
+      "tp": 59941.87,
+      "sl": 60291.772,
       "margin": 80.0,
       "score": 10,
       "reasons": [
         "BEAR",
-        "RSI 65.6",
+        "RSI 86.8",
         "BB-High",
         "BEAR TREND",
         "PUSHUP",
         "MTF DN"
       ],
-      "time": "06-25 01:26"
+      "time": "06-25 01:32"
+    },
+    "DOGE/USDT": {
+      "side": "sell",
+      "entry": 0.0746,
+      "tp": 0.074185,
+      "sl": 0.074766,
+      "margin": 80.0,
+      "score": 10,
+      "reasons": [
+        "BEAR",
+        "RSI 86.3",
+        "BB-High",
+        "BEAR TREND",
+        "PUSHUP",
+        "MTF DN"
+      ],
+      "time": "06-25 01:32"
     }
   },
-  "trades": [],
+  "trades": [
+    {
+      "time": "06-25 01:31",
+      "symbol": "ETH/USDT",
+      "side": "SELL",
+      "entry": 1580.82,
+      "exit": 1583.5512,
+      "pnl": -1.3822,
+      "result": "TSL",
+      "score": 10,
+      "margin": 80.0
+    },
+    {
+      "time": "06-25 01:32",
+      "symbol": "BTC/USDT",
+      "side": "SELL",
+      "entry": 59814.5,
+      "exit": 59891.03,
+      "pnl": -1.0236,
+      "result": "TSL",
+      "score": 8,
+      "margin": 80.0
+    },
+    {
+      "time": "06-25 01:32",
+      "symbol": "DOGE/USDT",
+      "side": "SELL",
+      "entry": 0.07404,
+      "exit": 0.074168,
+      "pnl": -1.383,
+      "result": "TSL",
+      "score": 10,
+      "margin": 80.0
+    }
+  ],
   "last_prices": {
-    "XRP/USDT": 1.0558,
-    "ETH/USDT": 1580.82,
-    "BNB/USDT": 554.1,
-    "BTC/USDT": 59814.5,
-    "DOGE/USDT": 0.07404,
-    "SOL/USDT": 65.98
+    "XRP/USDT": 1.0632,
+    "ETH/USDT": 1589.4,
+    "BNB/USDT": 557.8,
+    "BTC/USDT": 60191.8,
+    "DOGE/USDT": 0.0746,
+    "SOL/USDT": 66.88
   },
   "stats": {
-    "total_trades": 0,
+    "total_trades": 3,
     "wins": 0,
-    "losses": 0,
+    "losses": 3,
     "best_trade": 0.0,
-    "worst_trade": 0.0,
-    "daily_pnl": {},
-    "daily_trades": {}
+    "worst_trade": -1.383,
+    "daily_pnl": {
+      "2026-06-25": -3.7888
+    },
+    "daily_trades": {
+      "2026-06-25": 3
+    }
   }
 }
