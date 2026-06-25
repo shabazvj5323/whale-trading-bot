@@ -1,27 +1,11 @@
 {
-  "total_pnl": 7.834,
+  "total_pnl": 3.7609,
   "active_positions": {
-    "SOL/USDT": {
-      "side": "sell",
-      "entry": 69.49,
-      "tp": 67.926006,
-      "sl": 68.95797,
-      "margin": 60.0,
-      "score": 6,
-      "reasons": [
-        "BULL",
-        "RSI 76.1",
-        "BB-High",
-        "COUNTER-TREND",
-        "PUSHUP"
-      ],
-      "time": "06-25 12:30"
-    },
     "ETH/USDT": {
       "side": "sell",
       "entry": 1655.01,
       "tp": 1629.411253,
-      "sl": 1647.273576,
+      "sl": 1646.716221,
       "margin": 60.0,
       "score": 4,
       "reasons": [
@@ -50,23 +34,6 @@
       ],
       "time": "06-25 18:09"
     },
-    "BNB/USDT": {
-      "side": "sell",
-      "entry": 563.5,
-      "tp": 560.74,
-      "sl": 566.369,
-      "margin": 80.0,
-      "score": 10,
-      "reasons": [
-        "BEAR",
-        "BB-High",
-        "EMA DN",
-        "BEAR TREND",
-        "PUSHUP",
-        "MTF DN"
-      ],
-      "time": "06-25 18:09"
-    },
     "XRP/USDT": {
       "side": "sell",
       "entry": 1.0742,
@@ -84,6 +51,23 @@
         "MTF DN"
       ],
       "time": "06-25 18:09"
+    },
+    "BNB/USDT": {
+      "side": "sell",
+      "entry": 567.7,
+      "tp": 565.12,
+      "sl": 567.7645,
+      "margin": 80.0,
+      "score": 8,
+      "reasons": [
+        "SIDEWAYS",
+        "RSI 84.9",
+        "BB-High",
+        "SIDEWAYS",
+        "PUSHUP",
+        "MTF DN"
+      ],
+      "time": "06-25 18:57"
     }
   },
   "trades": [
@@ -273,27 +257,38 @@
       "result": "TSL",
       "score": 6,
       "margin": 60.0
+    },
+    {
+      "time": "06-25 18:57",
+      "symbol": "BNB/USDT",
+      "side": "SELL",
+      "entry": 563.5,
+      "exit": 566.369,
+      "pnl": -4.0731,
+      "result": "TSL",
+      "score": 10,
+      "margin": 80.0
     }
   ],
   "last_prices": {
-    "BNB/USDT": 562.8,
-    "XRP/USDT": 1.0741,
-    "BTC/USDT": 61250.1,
-    "DOGE/USDT": 0.07602,
-    "ETH/USDT": 1637.44,
-    "SOL/USDT": 68.25
+    "BNB/USDT": 567.7,
+    "XRP/USDT": 1.0734,
+    "BTC/USDT": 61200.6,
+    "DOGE/USDT": 0.07612,
+    "ETH/USDT": 1633.49,
+    "SOL/USDT": 68.21
   },
   "stats": {
-    "total_trades": 17,
+    "total_trades": 18,
     "wins": 9,
-    "losses": 8,
+    "losses": 9,
     "best_trade": 6.9806,
-    "worst_trade": -0.7968,
+    "worst_trade": -4.0731,
     "daily_pnl": {
-      "2026-06-25": 7.834
+      "2026-06-25": 3.7609
     },
     "daily_trades": {
-      "2026-06-25": 17
+      "2026-06-25": 18
     }
   },
   "last_prices_history": {
@@ -313,7 +308,8 @@
       562.1,
       562.6,
       563.5,
-      562.8
+      562.8,
+      567.7
     ],
     "ETH/USDT": [
       1653.02,
@@ -331,7 +327,8 @@
       1629.45,
       1630.54,
       1637.54,
-      1637.44
+      1637.44,
+      1633.49
     ],
     "XRP/USDT": [
       1.0869,
@@ -349,7 +346,8 @@
       1.0698,
       1.0707,
       1.0742,
-      1.0741
+      1.0741,
+      1.0734
     ],
     "SOL/USDT": [
       69.35,
@@ -367,7 +365,8 @@
       68.04,
       68.12,
       68.36,
-      68.25
+      68.25,
+      68.21
     ],
     "DOGE/USDT": [
       0.07717,
@@ -385,7 +384,8 @@
       0.07581,
       0.07591,
       0.07599,
-      0.07602
+      0.07602,
+      0.07612
     ],
     "BTC/USDT": [
       61693.5,
@@ -403,7 +403,8 @@
       61194.0,
       61168.2,
       61390.0,
-      61250.1
+      61250.1,
+      61200.6
     ]
   }
 }
