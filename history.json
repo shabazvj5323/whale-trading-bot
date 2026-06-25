@@ -1,6 +1,88 @@
 {
   "total_pnl": -25.0552,
-  "active_positions": {},
+  "active_positions": {
+    "SOL/USDT": {
+      "side": "sell",
+      "entry": 67.86,
+      "tp": 67.647,
+      "sl": 67.9452,
+      "margin": 80.0,
+      "score": 8,
+      "reasons": [
+        "BULL",
+        "RSI 71.3",
+        "BB-High",
+        "EMA DN",
+        "COUNTER-TREND",
+        "PUSHUP"
+      ],
+      "time": "06-25 07:20"
+    },
+    "BTC/USDT": {
+      "side": "sell",
+      "entry": 60873.7,
+      "tp": 60748.27,
+      "sl": 60923.872,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "BULL",
+        "BB-High",
+        "EMA DN",
+        "COUNTER-TREND",
+        "PUSHUP"
+      ],
+      "time": "06-25 07:20"
+    },
+    "DOGE/USDT": {
+      "side": "sell",
+      "entry": 0.07627,
+      "tp": 0.076077,
+      "sl": 0.076347,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "BULL",
+        "RSI 62.4",
+        "BB-High",
+        "COUNTER-TREND",
+        "PUSHUP"
+      ],
+      "time": "06-25 07:20"
+    },
+    "ETH/USDT": {
+      "side": "sell",
+      "entry": 1621.9,
+      "tp": 1617.2305,
+      "sl": 1623.7678,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "BULL",
+        "RSI 68.6",
+        "BB-High",
+        "COUNTER-TREND",
+        "PUSHUP"
+      ],
+      "time": "06-25 07:20"
+    },
+    "BNB/USDT": {
+      "side": "sell",
+      "entry": 565.6,
+      "tp": 564.49,
+      "sl": 566.044,
+      "margin": 60.0,
+      "score": 6,
+      "reasons": [
+        "BULL",
+        "RSI 74.8",
+        "BB-High",
+        "COUNTER-TREND",
+        "PUSHUP"
+      ],
+      "time": "06-25 07:20"
+    }
+  },
   "trades": [
     {
       "time": "06-25 01:31",
@@ -202,12 +284,12 @@
     }
   ],
   "last_prices": {
-    "XRP/USDT": 1.0735,
-    "ETH/USDT": 1618.24,
-    "BNB/USDT": 563.9,
-    "BTC/USDT": 60959.5,
-    "DOGE/USDT": 0.07598,
-    "SOL/USDT": 67.93
+    "XRP/USDT": 1.075,
+    "ETH/USDT": 1621.9,
+    "BNB/USDT": 565.6,
+    "BTC/USDT": 60873.7,
+    "DOGE/USDT": 0.07627,
+    "SOL/USDT": 67.86
   },
   "stats": {
     "total_trades": 18,
