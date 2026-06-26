@@ -2,8 +2,34 @@
   "total_pnl": 0.0,
   "active_positions": {},
   "trades": [],
-  "last_prices": {},
-  "last_prices_history": {},
+  "last_prices": {
+    "ETH/USDT": 1549.83,
+    "BTC/USDT": 59901.1,
+    "SOL/USDT": 68.03,
+    "XRP/USDT": 1.0287,
+    "BNB/USDT": 560.7,
+    "DOGE/USDT": 0.07424
+  },
+  "last_prices_history": {
+    "ETH/USDT": [
+      1549.83
+    ],
+    "BTC/USDT": [
+      59901.1
+    ],
+    "SOL/USDT": [
+      68.03
+    ],
+    "XRP/USDT": [
+      1.0287
+    ],
+    "BNB/USDT": [
+      560.7
+    ],
+    "DOGE/USDT": [
+      0.07424
+    ]
+  },
   "stats": {
     "total_trades": 0,
     "wins": 0,
