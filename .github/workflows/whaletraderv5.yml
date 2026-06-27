@@ -1,11 +1,11 @@
-name: WhaleTrader Automated Demo Pipeline
+name: WhaleTrader V5 — Ultimate
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '*/5 * * * *'
 
 permissions:
   contents: write
@@ -13,14 +13,14 @@ permissions:
 jobs:
   execute-core:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 8
     steps:
-      - name: Code Base Pull
+      - name: Code Pull
         uses: actions/checkout@v4
         with:
           clean: false
 
-      - name: Environment Spin Up
+      - name: Python Setup
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
@@ -36,15 +36,9 @@ jobs:
           BINANCE_SECRET_KEY: ${{ secrets.BINANCE_SECRET_KEY }}
         run: python main.py
 
-      - name: Commit Dashboard
+      - name: Commit Results
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Bot sync [skip ci]"
-          file_pattern: 'index.html history.json'
-          push_options: '--force'
-      - name: Commit Dashboard
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Bot sync [skip ci]"
+          commit_message: "Bot sync V5 — Ultimate [skip ci]"
           file_pattern: 'index.html history.json'
           push_options: '--force'
