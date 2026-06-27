@@ -1,11 +1,11 @@
 {
-  "total_pnl": 45.0121,
+  "total_pnl": 27.1638,
   "active_positions": {
     "DOGE/USDT": {
       "side": "sell",
       "entry": 0.07596,
-      "tp": 0.075214,
-      "sl": 0.075574,
+      "tp": 0.074792,
+      "sl": 0.075553,
       "margin": 100.0,
       "score": 7,
       "reasons": [
@@ -16,78 +16,78 @@
       ],
       "time": "06-27 21:46"
     },
-    "BTC/USDT": {
+    "XRP/USDT": {
       "side": "buy",
-      "entry": 60500.1,
-      "tp": 60628.714286,
-      "sl": 60326.228571,
+      "entry": 1.0551,
+      "tp": 1.057018,
+      "sl": 1.052861,
       "margin": 100.0,
-      "score": 8,
+      "score": 5,
       "reasons": [
         "SIDEWAYS",
-        "BB BOUNCE LOW",
-        "REVERSAL CANDLE",
-        "ORDER FLOW SELL"
+        "VWAP BUY",
+        "EMA RIBBON BEAR"
       ],
-      "time": "06-27 22:35"
+      "time": "06-28 02:05"
     },
     "ETH/USDT": {
       "side": "buy",
-      "entry": 1592.62,
-      "tp": 1598.005,
-      "sl": 1585.205,
-      "margin": 100.0,
-      "score": 8,
-      "reasons": [
-        "BULL",
-        "BB BOUNCE LOW",
-        "REVERSAL CANDLE",
-        "ORDER FLOW SELL"
-      ],
-      "time": "06-27 22:35"
-    },
-    "SOL/USDT": {
-      "side": "buy",
-      "entry": 72.15,
-      "tp": 72.4575,
-      "sl": 71.7575,
+      "entry": 1581.15,
+      "tp": 1584.9675,
+      "sl": 1575.4975,
       "margin": 100.0,
       "score": 7,
       "reasons": [
         "SIDEWAYS",
         "VWAP BUY",
         "EMA RIBBON BEAR",
-        "ORDER FLOW SELL"
+        "ORDER FLOW BUY"
       ],
-      "time": "06-27 22:52"
+      "time": "06-28 02:05"
     },
-    "XRP/USDT": {
+    "BTC/USDT": {
       "side": "buy",
-      "entry": 1.0592,
-      "tp": 1.061911,
-      "sl": 1.055796,
+      "entry": 60245.1,
+      "tp": 60344.582143,
+      "sl": 60084.839286,
       "margin": 100.0,
-      "score": 5,
+      "score": 7,
       "reasons": [
         "SIDEWAYS",
         "VWAP BUY",
-        "EMA RIBBON BEAR"
+        "EMA RIBBON BEAR",
+        "ORDER FLOW BUY"
       ],
-      "time": "06-27 23:47"
+      "time": "06-28 02:05"
     },
     "BNB/USDT": {
       "side": "buy",
-      "entry": 562.1,
-      "tp": 562.807143,
-      "sl": 561.164286,
+      "entry": 559.5,
+      "tp": 560.442857,
+      "sl": 558.285714,
       "margin": 100.0,
-      "score": 5,
+      "score": 7,
       "reasons": [
         "SIDEWAYS",
         "VWAP BUY",
+        "EMA RIBBON BEAR",
+        "ORDER FLOW BUY"
+      ],
+      "time": "06-28 02:05"
+    },
+    "SOL/USDT": {
+      "side": "buy",
+      "entry": 71.24,
+      "tp": 71.443571,
+      "sl": 70.942143,
+      "margin": 100.0,
+      "score": 5,
+      "reasons": [
+        "BEAR",
+        "VWAP BUY",
         "EMA RIBBON BEAR"
       ],
-      "time": "06-28 00:42"
+      "time": "06-28 02:06"
     }
   },
   "trades": [
@@ -380,19 +380,73 @@
       "result": "TSL",
       "score": 7,
       "margin": 100.0
+    },
+    {
+      "time": "06-28 02:05",
+      "symbol": "XRP/USDT",
+      "side": "BUY",
+      "entry": 1.0592,
+      "exit": 1.055796,
+      "pnl": -3.2137,
+      "result": "TSL",
+      "score": 5,
+      "margin": 100.0
+    },
+    {
+      "time": "06-28 02:05",
+      "symbol": "ETH/USDT",
+      "side": "BUY",
+      "entry": 1592.62,
+      "exit": 1585.205,
+      "pnl": -4.6559,
+      "result": "TSL",
+      "score": 8,
+      "margin": 100.0
+    },
+    {
+      "time": "06-28 02:05",
+      "symbol": "BTC/USDT",
+      "side": "BUY",
+      "entry": 60500.1,
+      "exit": 60326.228571,
+      "pnl": -2.8739,
+      "result": "TSL",
+      "score": 8,
+      "margin": 100.0
+    },
+    {
+      "time": "06-28 02:05",
+      "symbol": "BNB/USDT",
+      "side": "BUY",
+      "entry": 562.1,
+      "exit": 561.164286,
+      "pnl": -1.6647,
+      "result": "TSL",
+      "score": 5,
+      "margin": 100.0
+    },
+    {
+      "time": "06-28 02:06",
+      "symbol": "SOL/USDT",
+      "side": "BUY",
+      "entry": 72.15,
+      "exit": 71.7575,
+      "pnl": -5.4401,
+      "result": "TSL",
+      "score": 7,
+      "margin": 100.0
     }
   ],
   "last_prices": {
-    "ETH/USDT": 1592.3,
-    "BTC/USDT": 60542.3,
-    "SOL/USDT": 71.8,
-    "XRP/USDT": 1.058,
-    "BNB/USDT": 561.6,
-    "DOGE/USDT": 0.07527
+    "ETH/USDT": 1581.15,
+    "BTC/USDT": 60245.1,
+    "SOL/USDT": 71.24,
+    "XRP/USDT": 1.0551,
+    "BNB/USDT": 559.5,
+    "DOGE/USDT": 0.07485
   },
   "last_prices_history": {
     "ETH/USDT": [
-      1581.01,
       1581.2,
       1582.77,
       1583.37,
@@ -411,10 +465,10 @@
       1593.35,
       1592.65,
       1593.61,
-      1592.3
+      1592.3,
+      1581.15
     ],
     "BTC/USDT": [
-      60306.9,
       60251.5,
       60268.3,
       60348.3,
@@ -433,10 +487,10 @@
       60587.3,
       60529.9,
       60569.3,
-      60542.3
+      60542.3,
+      60245.1
     ],
     "SOL/USDT": [
-      71.72,
       71.65,
       71.75,
       71.88,
@@ -455,10 +509,10 @@
       72.19,
       72.12,
       71.88,
-      71.8
+      71.8,
+      71.24
     ],
     "XRP/USDT": [
-      1.0544,
       1.0572,
       1.0578,
       1.059,
@@ -477,10 +531,10 @@
       1.0615,
       1.0592,
       1.0589,
-      1.058
+      1.058,
+      1.0551
     ],
     "BNB/USDT": [
-      562.4,
       562.2,
       562.8,
       563.5,
@@ -499,10 +553,10 @@
       563.6,
       563.0,
       562.1,
-      561.6
+      561.6,
+      559.5
     ],
     "DOGE/USDT": [
-      0.07531,
       0.07532,
       0.0753,
       0.07529,
@@ -521,24 +575,25 @@
       0.07573,
       0.07543,
       0.07534,
-      0.07527
+      0.07527,
+      0.07485
     ]
   },
   "stats": {
-    "total_trades": 26,
+    "total_trades": 31,
     "wins": 13,
-    "losses": 13,
+    "losses": 18,
     "best_trade": 12.5296,
     "worst_trade": -10.8346,
     "daily_pnl": {
       "2026-06-26": 4.6387,
       "2026-06-27": 41.9149,
-      "2026-06-28": -1.5415
+      "2026-06-28": -19.3898
     },
     "daily_trades": {
       "2026-06-26": 8,
       "2026-06-27": 17,
-      "2026-06-28": 1
+      "2026-06-28": 6
     }
   }
 }
