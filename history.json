@@ -1,28 +1,15 @@
-import json
-import os
-from datetime import datetime
-
-# Backup existing
-if os.path.exists("history.json"):
-    os.rename("history.json", f"history_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-
-# Create fresh default
-default = {
-    "total_pnl": 0.0,
-    "active_positions": {},
-    "trades": [],
-    "last_prices": {},
-    "stats": {
-        "total_trades": 0,
-        "wins": 0,
-        "losses": 0,
-        "best_trade": 0.0,
-        "worst_trade": 0.0,
-        "daily_pnl": {},
-        "daily_trades": {},
-    }
+{
+  "active_positions": {},
+  "trades": [],
+  "total_pnl": 0.0,
+  "last_prices": {},
+  "stats": {
+    "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "best_trade": 0.0,
+    "worst_trade": 0.0,
+    "daily_pnl": {},
+    "daily_trades": {}
+  }
 }
-with open("history.json", "w") as f:
-    json.dump(default, f, indent=2)
-
-print("✅ history.json reset successfully. Backup saved.")
