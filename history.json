@@ -1,57 +1,99 @@
 {
   "active_positions": {
+    "SOL/USDT": {
+      "side": "buy",
+      "entry": 73.82,
+      "tp": 74.325714,
+      "sl": 73.451429,
+      "margin": 100.0,
+      "score": 6,
+      "reasons": [
+        "BULL",
+        "EMA RIBBON BULL",
+        "VOL 1.4x"
+      ],
+      "time": "06-29 22:24"
+    },
     "BNB/USDT": {
       "side": "buy",
-      "entry": 552.2,
-      "tp": 553.764286,
-      "sl": 549.478571,
+      "entry": 556.1,
+      "tp": 558.092857,
+      "sl": 552.335714,
       "margin": 100.0,
       "score": 4,
       "reasons": [
         "SIDEWAYS",
         "ORDER FLOW BUY",
-        "PIN BAR BULL"
+        "VOL 9.2x"
       ],
-      "time": "06-29 22:08"
+      "time": "06-29 22:24"
     }
   },
-  "trades": [],
-  "total_pnl": 0,
+  "trades": [
+    {
+      "time": "06-29 22:24",
+      "symbol": "BNB/USDT",
+      "side": "BUY",
+      "entry": 552.2,
+      "exit": 553.764286,
+      "pnl": 2.8328,
+      "result": "TP",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW BUY",
+        "PIN BAR BULL"
+      ]
+    }
+  ],
+  "total_pnl": 2.8328,
   "last_prices": {
-    "BTC/USDT": 59731.6,
-    "ETH/USDT": 1577.75,
-    "SOL/USDT": 73.3,
-    "BNB/USDT": 552.2,
-    "XRP/USDT": 1.0448,
-    "DOGE/USDT": 0.07235
+    "BTC/USDT": 59827.1,
+    "ETH/USDT": 1582.61,
+    "SOL/USDT": 73.82,
+    "BNB/USDT": 556.1,
+    "XRP/USDT": 1.0497,
+    "DOGE/USDT": 0.07274
   },
   "stats": {
-    "total_trades": 0,
-    "wins": 0,
+    "total_trades": 1,
+    "wins": 1,
     "losses": 0,
-    "best_trade": 0.0,
+    "best_trade": 2.8328,
     "worst_trade": 0.0,
-    "daily_pnl": {},
-    "daily_trades": {}
+    "daily_pnl": {
+      "2026-06-29": 2.8328
+    },
+    "daily_trades": {
+      "2026-06-29": 1
+    }
   },
   "last_prices_history": {
     "BTC/USDT": [
-      59731.6
+      59731.6,
+      59827.1
     ],
     "ETH/USDT": [
-      1577.75
+      1577.75,
+      1582.61
     ],
     "SOL/USDT": [
-      73.3
+      73.3,
+      73.82
     ],
     "BNB/USDT": [
-      552.2
+      552.2,
+      556.1
     ],
     "XRP/USDT": [
-      1.0448
+      1.0448,
+      1.0497
     ],
     "DOGE/USDT": [
-      0.07235
+      0.07235,
+      0.07274
     ]
   }
 }
