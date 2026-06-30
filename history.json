@@ -2,73 +2,43 @@
   "active_positions": {
     "SOL/USDT": {
       "side": "sell",
-      "entry": 73.74,
-      "tp": 73.426071,
-      "sl": 73.511857,
-      "margin": 100.0,
-      "score": 6,
-      "reasons": [
-        "BEAR",
-        "EMA RIBBON BEAR",
-        "PIN BAR BEAR"
-      ],
-      "time": "06-30 15:12"
-    },
-    "DOGE/USDT": {
-      "side": "buy",
-      "entry": 0.07244,
-      "tp": 0.072663,
-      "sl": 0.072136,
-      "margin": 100.0,
-      "score": 10,
-      "reasons": [
-        "SIDEWAYS",
-        "ORDER FLOW BUY",
-        "OB BREAKOUT",
-        "LIQ SWEEP UP"
-      ],
-      "time": "06-30 15:12"
-    },
-    "BTC/USDT": {
-      "side": "sell",
-      "entry": 59243.9,
-      "tp": 59160.082143,
-      "sl": 59396.739286,
-      "margin": 100.0,
-      "score": 4,
-      "reasons": [
-        "SIDEWAYS",
-        "ORDER FLOW SELL",
-        "VOL 1.8x"
-      ],
-      "time": "06-30 16:54"
-    },
-    "ETH/USDT": {
-      "side": "sell",
-      "entry": 1579.52,
-      "tp": 1576.335714,
-      "sl": 1585.661429,
-      "margin": 100.0,
-      "score": 4,
-      "reasons": [
-        "SIDEWAYS",
-        "ORDER FLOW SELL",
-        "VOL 2.9x"
-      ],
-      "time": "06-30 16:54"
-    },
-    "BNB/USDT": {
-      "side": "sell",
-      "entry": 548.1,
-      "tp": 547.414286,
-      "sl": 549.528571,
+      "entry": 72.97,
+      "tp": 72.713929,
+      "sl": 73.285357,
       "margin": 100.0,
       "score": 4,
       "reasons": [
         "BEAR",
         "EMA RIBBON BEAR"
       ],
-      "time": "06-30 16:54"
+      "time": "06-30 17:44"
+    },
+    "BNB/USDT": {
+      "side": "sell",
+      "entry": 547.0,
+      "tp": 545.982143,
+      "sl": 547.539286,
+      "margin": 100.0,
+      "score": 4,
+      "reasons": [
+        "BEAR",
+        "EMA RIBBON BEAR"
+      ],
+      "time": "06-30 17:44"
+    },
+    "DOGE/USDT": {
+      "side": "sell",
+      "entry": 0.07082,
+      "tp": 0.070416,
+      "sl": 0.071265,
+      "margin": 100.0,
+      "score": 6,
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW SELL",
+        "OB BREAKDOWN"
+      ],
+      "time": "06-30 17:44"
     }
   },
   "trades": [
@@ -944,35 +914,119 @@
         "ORDER FLOW SELL",
         "VOL 2.3x"
       ]
+    },
+    {
+      "time": "06-30 17:44",
+      "symbol": "BTC/USDT",
+      "side": "SELL",
+      "entry": 59243.9,
+      "exit": 59160.082143,
+      "pnl": 1.4148,
+      "result": "TP",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW SELL",
+        "VOL 1.8x"
+      ]
+    },
+    {
+      "time": "06-30 17:44",
+      "symbol": "ETH/USDT",
+      "side": "SELL",
+      "entry": 1579.52,
+      "exit": 1576.335714,
+      "pnl": 2.016,
+      "result": "TP",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW SELL",
+        "VOL 2.9x"
+      ]
+    },
+    {
+      "time": "06-30 17:44",
+      "symbol": "SOL/USDT",
+      "side": "SELL",
+      "entry": 73.74,
+      "exit": 73.426071,
+      "pnl": 4.2572,
+      "result": "TP",
+      "score": 6,
+      "margin": 100.0,
+      "strategy": "EMA RIBBON",
+      "reasons": [
+        "BEAR",
+        "EMA RIBBON BEAR",
+        "PIN BAR BEAR"
+      ]
+    },
+    {
+      "time": "06-30 17:44",
+      "symbol": "BNB/USDT",
+      "side": "SELL",
+      "entry": 548.1,
+      "exit": 547.414286,
+      "pnl": 1.2511,
+      "result": "TP",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "EMA RIBBON",
+      "reasons": [
+        "BEAR",
+        "EMA RIBBON BEAR"
+      ]
+    },
+    {
+      "time": "06-30 17:44",
+      "symbol": "DOGE/USDT",
+      "side": "BUY",
+      "entry": 0.07244,
+      "exit": 0.072136,
+      "pnl": -4.1966,
+      "result": "TSL",
+      "score": 10,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW BUY",
+        "OB BREAKOUT",
+        "LIQ SWEEP UP"
+      ]
     }
   ],
-  "total_pnl": 47.7984,
+  "total_pnl": 52.5409,
   "last_prices": {
-    "BTC/USDT": 59243.9,
-    "ETH/USDT": 1579.52,
-    "SOL/USDT": 73.43,
-    "BNB/USDT": 548.1,
-    "XRP/USDT": 1.0407,
-    "DOGE/USDT": 0.07221
+    "BTC/USDT": 59008.7,
+    "ETH/USDT": 1573.01,
+    "SOL/USDT": 72.97,
+    "BNB/USDT": 547.0,
+    "XRP/USDT": 1.0346,
+    "DOGE/USDT": 0.07082
   },
   "stats": {
-    "total_trades": 52,
-    "wins": 36,
-    "losses": 16,
+    "total_trades": 57,
+    "wins": 40,
+    "losses": 17,
     "best_trade": 7.4065,
     "worst_trade": -5.0031,
     "daily_pnl": {
       "2026-06-29": 33.1352,
-      "2026-06-30": 14.6632
+      "2026-06-30": 19.4057
     },
     "daily_trades": {
       "2026-06-29": 11,
-      "2026-06-30": 41
+      "2026-06-30": 46
     }
   },
   "last_prices_history": {
     "BTC/USDT": [
-      60465.6,
       60491.6,
       60410.1,
       60245.0,
@@ -991,10 +1045,10 @@
       59484.4,
       59389.7,
       59352.5,
-      59243.9
+      59243.9,
+      59008.7
     ],
     "ETH/USDT": [
-      1629.74,
       1627.28,
       1626.56,
       1620.0,
@@ -1013,10 +1067,10 @@
       1591.28,
       1587.78,
       1584.98,
-      1579.52
+      1579.52,
+      1573.01
     ],
     "SOL/USDT": [
-      75.38,
       75.57,
       75.48,
       75.55,
@@ -1035,10 +1089,10 @@
       74.0,
       73.89,
       73.74,
-      73.43
+      73.43,
+      72.97
     ],
     "BNB/USDT": [
-      561.0,
       562.1,
       561.5,
       560.9,
@@ -1057,10 +1111,10 @@
       552.0,
       550.9,
       549.4,
-      548.1
+      548.1,
+      547.0
     ],
     "XRP/USDT": [
-      1.0669,
       1.0683,
       1.0675,
       1.0636,
@@ -1079,10 +1133,10 @@
       1.0468,
       1.0443,
       1.0437,
-      1.0407
+      1.0407,
+      1.0346
     ],
     "DOGE/USDT": [
-      0.07398,
       0.07403,
       0.07395,
       0.07378,
@@ -1101,7 +1155,8 @@
       0.07234,
       0.07226,
       0.07244,
-      0.07221
+      0.07221,
+      0.07082
     ]
   }
 }
