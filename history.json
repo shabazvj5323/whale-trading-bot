@@ -1,64 +1,5 @@
 {
   "active_positions": {
-    "SOL/USDT": {
-      "side": "buy",
-      "entry": 73.36,
-      "tp": 73.573214,
-      "sl": 73.480857,
-      "margin": 100.0,
-      "score": 5,
-      "reasons": [
-        "SIDEWAYS",
-        "ENGULFING BULL",
-        "PIN BAR BULL"
-      ],
-      "time": "07-01 04:35"
-    },
-    "ETH/USDT": {
-      "side": "sell",
-      "entry": 1569.99,
-      "tp": 1566.594643,
-      "sl": 1575.851786,
-      "margin": 100.0,
-      "score": 4,
-      "reasons": [
-        "SIDEWAYS",
-        "ORDER FLOW SELL",
-        "VOL 1.4x"
-      ],
-      "time": "07-01 05:50"
-    },
-    "BNB/USDT": {
-      "side": "buy",
-      "entry": 546.4,
-      "tp": 547.310714,
-      "sl": 545.696429,
-      "margin": 100.0,
-      "score": 4,
-      "reasons": [
-        "SIDEWAYS",
-        "ORDER FLOW BUY",
-        "VOL 10.1x"
-      ],
-      "time": "07-01 05:50"
-    },
-    "XRP/USDT": {
-      "side": "sell",
-      "entry": 1.0379,
-      "tp": 1.035886,
-      "sl": 1.040571,
-      "margin": 100.0,
-      "score": 17,
-      "reasons": [
-        "SIDEWAYS",
-        "BB BLAST DN \ud83d\ude80",
-        "ORDER FLOW SELL",
-        "ENGULFING BEAR",
-        "OB BREAKDOWN",
-        "VOL 2.4x"
-      ],
-      "time": "07-01 05:50"
-    },
     "XRP/USDT_HEDGE": {
       "side": "buy",
       "entry": 1.0379,
@@ -77,19 +18,58 @@
       "time": "07-01 05:50",
       "is_hedge": true
     },
-    "DOGE/USDT": {
+    "BTC/USDT": {
       "side": "buy",
-      "entry": 0.07192,
-      "tp": 0.072086,
-      "sl": 0.071855,
+      "entry": 59386.1,
+      "tp": 59561.214286,
+      "sl": 59121.728571,
+      "margin": 100.0,
+      "score": 4,
+      "reasons": [
+        "BULL",
+        "EMA RIBBON BULL"
+      ],
+      "time": "07-01 10:16"
+    },
+    "ETH/USDT": {
+      "side": "buy",
+      "entry": 1601.11,
+      "tp": 1606.781071,
+      "sl": 1590.049643,
       "margin": 100.0,
       "score": 6,
       "reasons": [
         "BULL",
         "EMA RIBBON BULL",
-        "VOL 1.7x"
+        "VOL 2.7x"
       ],
-      "time": "07-01 05:50"
+      "time": "07-01 10:16"
+    },
+    "SOL/USDT": {
+      "side": "buy",
+      "entry": 75.74,
+      "tp": 76.149286,
+      "sl": 75.213571,
+      "margin": 100.0,
+      "score": 4,
+      "reasons": [
+        "BULL",
+        "EMA RIBBON BULL"
+      ],
+      "time": "07-01 10:16"
+    },
+    "BNB/USDT": {
+      "side": "buy",
+      "entry": 552.0,
+      "tp": 553.221429,
+      "sl": 550.292857,
+      "margin": 100.0,
+      "score": 4,
+      "reasons": [
+        "BULL",
+        "EMA RIBBON BULL"
+      ],
+      "time": "07-01 10:16"
     }
   },
   "trades": [
@@ -1499,37 +1479,124 @@
         "ORDER FLOW SELL",
         "ENGULFING BULL"
       ]
+    },
+    {
+      "time": "07-01 10:16",
+      "symbol": "ETH/USDT",
+      "side": "SELL",
+      "entry": 1569.99,
+      "exit": 1575.851786,
+      "pnl": -3.7336,
+      "result": "TSL",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW SELL",
+        "VOL 1.4x"
+      ]
+    },
+    {
+      "time": "07-01 10:16",
+      "symbol": "SOL/USDT",
+      "side": "BUY",
+      "entry": 73.36,
+      "exit": 73.573214,
+      "pnl": 2.9064,
+      "result": "TP",
+      "score": 5,
+      "margin": 100.0,
+      "strategy": "ENGULFING",
+      "reasons": [
+        "SIDEWAYS",
+        "ENGULFING BULL",
+        "PIN BAR BULL"
+      ]
+    },
+    {
+      "time": "07-01 10:16",
+      "symbol": "BNB/USDT",
+      "side": "BUY",
+      "entry": 546.4,
+      "exit": 547.310714,
+      "pnl": 1.6668,
+      "result": "TP",
+      "score": 4,
+      "margin": 100.0,
+      "strategy": "ORDER FLOW",
+      "reasons": [
+        "SIDEWAYS",
+        "ORDER FLOW BUY",
+        "VOL 10.1x"
+      ]
+    },
+    {
+      "time": "07-01 10:16",
+      "symbol": "XRP/USDT",
+      "side": "SELL",
+      "entry": 1.0379,
+      "exit": 1.040571,
+      "pnl": -2.5735,
+      "result": "TSL",
+      "score": 17,
+      "margin": 100.0,
+      "strategy": "BB BLAST",
+      "reasons": [
+        "SIDEWAYS",
+        "BB BLAST DN \ud83d\ude80",
+        "ORDER FLOW SELL",
+        "ENGULFING BEAR",
+        "OB BREAKDOWN",
+        "VOL 2.4x"
+      ]
+    },
+    {
+      "time": "07-01 10:16",
+      "symbol": "DOGE/USDT",
+      "side": "BUY",
+      "entry": 0.07192,
+      "exit": 0.072086,
+      "pnl": 2.3081,
+      "result": "TP",
+      "score": 6,
+      "margin": 100.0,
+      "strategy": "EMA RIBBON",
+      "reasons": [
+        "BULL",
+        "EMA RIBBON BULL",
+        "VOL 1.7x"
+      ]
     }
   ],
-  "total_pnl": 62.8688,
+  "total_pnl": 63.443,
   "last_prices": {
-    "BTC/USDT": 58500.9,
-    "ETH/USDT": 1569.99,
-    "SOL/USDT": 73.51,
-    "BNB/USDT": 546.4,
-    "XRP/USDT": 1.0379,
-    "DOGE/USDT": 0.07192
+    "BTC/USDT": 59386.1,
+    "ETH/USDT": 1601.11,
+    "SOL/USDT": 75.74,
+    "BNB/USDT": 552.0,
+    "XRP/USDT": 1.0533,
+    "DOGE/USDT": 0.07261
   },
   "stats": {
-    "total_trades": 84,
-    "wins": 54,
-    "losses": 30,
+    "total_trades": 89,
+    "wins": 57,
+    "losses": 32,
     "best_trade": 7.4065,
     "worst_trade": -5.0031,
     "daily_pnl": {
       "2026-06-29": 33.1352,
       "2026-06-30": 17.0938,
-      "2026-07-01": 12.6398
+      "2026-07-01": 13.214
     },
     "daily_trades": {
       "2026-06-29": 11,
       "2026-06-30": 64,
-      "2026-07-01": 9
+      "2026-07-01": 14
     }
   },
   "last_prices_history": {
     "BTC/USDT": [
-      59533.6,
       59443.6,
       59484.4,
       59389.7,
@@ -1548,10 +1615,10 @@
       58780.0,
       58566.6,
       58568.8,
-      58500.9
+      58500.9,
+      59386.1
     ],
     "ETH/USDT": [
-      1591.37,
       1591.62,
       1591.28,
       1587.78,
@@ -1570,10 +1637,10 @@
       1578.82,
       1569.68,
       1566.65,
-      1569.99
+      1569.99,
+      1601.11
     ],
     "SOL/USDT": [
-      74.02,
       74.01,
       74.0,
       73.89,
@@ -1592,10 +1659,10 @@
       73.77,
       73.3,
       73.36,
-      73.51
+      73.51,
+      75.74
     ],
     "BNB/USDT": [
-      553.2,
       551.9,
       552.0,
       550.9,
@@ -1614,10 +1681,10 @@
       546.6,
       544.3,
       545.0,
-      546.4
+      546.4,
+      552.0
     ],
     "XRP/USDT": [
-      1.0488,
       1.0471,
       1.0468,
       1.0443,
@@ -1636,10 +1703,10 @@
       1.0443,
       1.0393,
       1.0391,
-      1.0379
+      1.0379,
+      1.0533
     ],
     "DOGE/USDT": [
-      0.07243,
       0.07232,
       0.07234,
       0.07226,
@@ -1658,7 +1725,8 @@
       0.07209,
       0.07197,
       0.07192,
-      0.07192
+      0.07192,
+      0.07261
     ]
   }
 }
