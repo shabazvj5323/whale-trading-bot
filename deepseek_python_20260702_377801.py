@@ -1,0 +1,1328 @@
+# main.py – GitHub 15-min Version (Full Dashboard, OKX-first)
+import time
+import logging
+import os
+import json
+import numpy as np
+import requests
+from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+# =====================================================================
+# CONFIG
+# =====================================================================
+SYMBOLS = ["BTC/USDT", "ETH/USDT", "SOL/USDT", "BNB/USDT", "XRP/USDT", "DOGE/USDT"]
+INITIAL_CAPITAL = 1000.0
+MARGIN_PER_TRADE = 100.0
+LEVERAGE = 10
+HISTORY_FILE = "history.json"
+
+MAX_POSITIONS = 10
+MIN_SCORE = 4
+VOL_MULT = 1.5
+BB_PERIOD = 20
+BB_STD = 2.0
+BB_FAST_P = 10
+BB_FAST_S = 1.5
+SR_PERIOD = 15
+SR_THRESH = 0.003
+SR_RETEST_THRESH = 0.002
+ATR_PERIOD = 14
+
+TP_MULT = 2.0
+SL_MULT = 0.8
+TRAIL_LOOKBACK = 3
+
+# ---- Liquidation Hunting Parameters ----
+LIQ_LOOKBACK = 20
+LIQ_ATR_MULT = 1.5
+LIQ_CASCADE_MULT = 2.0
+
+SCAN_INTERVAL = 900        # 15 minutes
+
+# =====================================================================
+# LOGGING
+# =====================================================================
+class ISTFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        ist = datetime.utcnow() + timedelta(hours=5, minutes=30)
+        return ist.strftime("%Y-%m-%d %H:%M:%S IST")
+
+_handler = logging.StreamHandler()
+_handler.setFormatter(ISTFormatter("%(asctime)s | %(levelname)s | %(message)s"))
+logging.root.setLevel(logging.INFO)
+logging.root.handlers = [_handler]
+log = logging.getLogger("WhaleTrader_Pro")
+
+# =====================================================================
+# HELPERS
+# =====================================================================
+def ist_now():
+    return datetime.utcnow() + timedelta(hours=5, minutes=30)
+
+def ist_short():
+    return ist_now().strftime("%m-%d %H:%M")
+
+def ema_calc(arr, period):
+    k = 2.0 / (period + 1)
+    r = [float(arr[0])]
+    for p in arr[1:]:
+        r.append(float(p) * k + r[-1] * (1 - k))
+    return np.array(r)
+
+def rsi_calc(closes, period=14):
+    closes = closes.astype(float)
+    delta = np.diff(closes)
+    gain = np.where(delta > 0, delta, 0)
+    loss = np.where(delta < 0, -delta, 0)
+    avg_gain = np.mean(gain[:period]) if len(gain) >= period else 0
+    avg_loss = np.mean(loss[:period]) if len(loss) >= period else 0
+    for i in range(period, len(delta)):
+        avg_gain = (avg_gain * (period - 1) + gain[i]) / period
+        avg_loss = (avg_loss * (period - 1) + loss[i]) / period
+    rs = avg_gain / (avg_loss + 1e-10)
+    return 100 - (100 / (1 + rs))
+
+def atr_calc(highs, lows, closes, period):
+    h, l, c = highs.astype(float), lows.astype(float), closes.astype(float)
+    tr = np.maximum(h[1:] - l[1:],
+         np.maximum(np.abs(h[1:] - c[:-1]),
+                    np.abs(c[:-1] - l[1:])))
+    return float(np.mean(tr[-period:])) if len(tr) >= period else float(np.mean(tr))
+
+def bollinger_calc(closes, period, std_mult):
+    c = closes.astype(float)
+    recent = c[-period:] if len(c) >= period else c
+    sma = float(np.mean(recent))
+    std = float(np.std(recent))
+    return sma + std_mult * std, sma, sma - std_mult * std
+
+def market_regime(closes, highs, lows):
+    closes = closes.astype(float)
+    if len(closes) < 50:
+        return "SIDEWAYS"
+    ema50 = ema_calc(closes, 50)[-1]
+    ema200 = ema_calc(closes, min(100, len(closes)-1))[-1]
+    if ema50 > ema200 * 1.002:
+        regime = "BULL"
+    elif ema50 < ema200 * 0.998:
+        regime = "BEAR"
+    else:
+        regime = "SIDEWAYS"
+    return regime
+
+def support_resistance_range(price, highs, lows, threshold=0.002):
+    recent_high = np.max(highs[-10:])
+    recent_low = np.min(lows[-10:])
+    if abs(price - recent_high) / price < threshold:
+        return True
+    if abs(price - recent_low) / price < threshold:
+        return True
+    return False
+
+def detect_engulfing(opens, closes):
+    if len(opens) < 2: return None
+    prev_body = closes[-2] - opens[-2]
+    curr_body = closes[-1] - opens[-1]
+    if prev_body < 0 and curr_body > 0 and curr_body > abs(prev_body):
+        return "bullish"
+    if prev_body > 0 and curr_body < 0 and abs(curr_body) > prev_body:
+        return "bearish"
+    return None
+
+def detect_pin_bar(opens, highs, lows, closes):
+    if len(highs) < 2: return None
+    body = abs(closes[-1] - opens[-1])
+    lower_wick = min(opens[-1], closes[-1]) - lows[-1]
+    upper_wick = highs[-1] - max(opens[-1], closes[-1])
+    if lower_wick > 2 * body and lower_wick > upper_wick:
+        return "bullish"
+    if upper_wick > 2 * body and upper_wick > lower_wick:
+        return "bearish"
+    return None
+
+def detect_choch(highs, lows, closes, lookback=10):
+    if len(highs) < lookback + 1:
+        return None, None
+    recent_high = np.max(highs[-lookback:-1])
+    recent_low = np.min(lows[-lookback:-1])
+    current_price = closes[-1]
+    if current_price > recent_high:
+        return "bullish", recent_high
+    if current_price < recent_low:
+        return "bearish", recent_low
+    return None, None
+
+# ---- Liquidation Hunting Functions ----
+def detect_liquidation_sweep(highs, lows, closes, opens, lookback=10, threshold=0.002):
+    if len(highs) < lookback + 1:
+        return None, None
+    swing_high = np.max(highs[-lookback:-1])
+    swing_low = np.min(lows[-lookback:-1])
+    current_high = highs[-1]
+    current_close = closes[-1]
+    current_low = lows[-1]
+    if current_high > swing_high * (1 + threshold) and current_close < swing_high:
+        return "bullish", swing_high
+    if current_low < swing_low * (1 - threshold) and current_close > swing_low:
+        return "bearish", swing_low
+    return None, None
+
+def estimate_liquidation_levels(highs, lows, closes, atr, lookback=20):
+    if len(highs) < lookback:
+        return []
+    swing_high = np.max(highs[-lookback:])
+    swing_low = np.min(lows[-lookback:])
+    levels = []
+    levels.append((swing_high, "short"))
+    levels.append((swing_low, "long"))
+    levels.append((swing_high + atr * LIQ_ATR_MULT, "short"))
+    levels.append((swing_low - atr * LIQ_ATR_MULT, "long"))
+    levels.append((swing_high + atr * LIQ_CASCADE_MULT, "short"))
+    levels.append((swing_low - atr * LIQ_CASCADE_MULT, "long"))
+    return levels
+
+# =====================================================================
+# DATA FETCHING – OKX FIRST, then Binance fallback
+# =====================================================================
+def fetch_okx_public(symbol, interval="5m", limit=120):
+    try:
+        clean = symbol.replace("/", "-")
+        url = "https://www.okx.com/api/v5/market/candles"
+        params = {
+            "instId": clean + "-SWAP",
+            "bar": interval,
+            "limit": str(limit)
+        }
+        headers = {"User-Agent": "Mozilla/5.0"}
+        resp = requests.get(url, params=params, timeout=15, headers=headers)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("code") == "0" and data.get("data"):
+                raw = data["data"][::-1]
+                arr = np.array([[float(c[1]), float(c[2]), float(c[3]),
+                                 float(c[4]), float(c[5])] for c in raw])
+                return arr[:,0], arr[:,1], arr[:,2], arr[:,3], arr[:,4]
+        log.warning(f"OKX public {resp.status_code} for {symbol} {interval}")
+        return None
+    except Exception as e:
+        log.warning(f"OKX public failed {symbol} {interval}: {e}")
+        return None
+
+def fetch_binance_public(symbol, interval="5m", limit=120):
+    try:
+        clean = symbol.replace("/", "")
+        url = "https://api.binance.com/api/v3/klines"
+        params = {"symbol": clean, "interval": interval, "limit": limit}
+        resp = requests.get(url, params=params, timeout=15)
+        if resp.status_code == 200:
+            data = resp.json()
+            arr = np.array([[float(c[1]), float(c[2]), float(c[3]),
+                             float(c[4]), float(c[5])] for c in data], dtype=float)
+            return arr[:,0], arr[:,1], arr[:,2], arr[:,3], arr[:,4]
+        log.warning(f"Binance public {resp.status_code} for {symbol} {interval}")
+        return None
+    except Exception as e:
+        log.warning(f"Binance public failed {symbol} {interval}: {e}")
+        return None
+
+def fetch_candles(symbol, interval="5m", limit=120):
+    result = fetch_okx_public(symbol, interval, limit)
+    if result is not None:
+        return result
+    log.info(f"OKX failed for {symbol} {interval}, trying Binance...")
+    return fetch_binance_public(symbol, interval, limit)
+
+def fetch_symbol_data_enhanced(symbol):
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        f1h = executor.submit(fetch_candles, symbol, "1h", 100)
+        f15m = executor.submit(fetch_candles, symbol, "15m", 120)
+        f5m = executor.submit(fetch_candles, symbol, "5m", 120)
+        f1m = executor.submit(fetch_candles, symbol, "1m", 60)
+        r1h = f1h.result()
+        r15m = f15m.result()
+        r5m = f5m.result()
+        r1m = f1m.result()
+    if r1h and r15m and r5m and r1m:
+        return {
+            '1h': {'o': r1h[0], 'h': r1h[1], 'l': r1h[2], 'c': r1h[3], 'v': r1h[4]},
+            '15m': {'o': r15m[0], 'h': r15m[1], 'l': r15m[2], 'c': r15m[3], 'v': r15m[4]},
+            '5m': {'o': r5m[0], 'h': r5m[1], 'l': r5m[2], 'c': r5m[3], 'v': r5m[4]},
+            '1m': {'o': r1m[0], 'h': r1m[1], 'l': r1m[2], 'c': r1m[3], 'v': r1m[4]}
+        }
+    return None
+
+# =====================================================================
+# ENGINE
+# =====================================================================
+class WhaleEngine:
+    def __init__(self):
+        self.dashboard = []
+        self._last_is_blast = False
+        self.state = self.load_history()
+
+    def load_history(self):
+        default = {
+            "total_pnl": 0.0,
+            "active_positions": {},
+            "trades": [],
+            "last_prices": {},
+            "stats": {
+                "total_trades": 0,
+                "wins": 0,
+                "losses": 0,
+                "best_trade": 0.0,
+                "worst_trade": 0.0,
+                "daily_pnl": {},
+                "daily_trades": {},
+            }
+        }
+        if not os.path.exists(HISTORY_FILE):
+            return default
+        try:
+            with open(HISTORY_FILE) as f:
+                data = json.load(f)
+            for k, v in default.items():
+                if k not in data:
+                    data[k] = v
+            for k, v in default["stats"].items():
+                if k not in data.get("stats", {}):
+                    data.setdefault("stats", {})[k] = v
+            if not data["stats"]["daily_pnl"] or isinstance(data["stats"]["daily_pnl"], str):
+                data["stats"]["daily_pnl"] = {}
+                data["stats"]["daily_trades"] = {}
+                for t in data.get("trades", []):
+                    try:
+                        time_str = t.get("time", "")
+                        month_day = time_str.split()[0]
+                        year = datetime.now().year
+                        date_str = f"{year}-{month_day}"
+                        date_obj = datetime.strptime(date_str, "%Y-%m-%d").date()
+                        day_key = date_obj.strftime("%Y-%m-%d")
+                    except:
+                        continue
+                    pnl = float(t.get("pnl", 0.0))
+                    data["stats"]["daily_pnl"][day_key] = round(data["stats"]["daily_pnl"].get(day_key, 0.0) + pnl, 4)
+                    data["stats"]["daily_trades"][day_key] = data["stats"]["daily_trades"].get(day_key, 0) + 1
+                total = round(sum(t.get("pnl", 0.0) for t in data.get("trades", [])), 4)
+                data["total_pnl"] = total
+                log.info("History auto-repaired.")
+            return data
+        except Exception as e:
+            log.warning(f"History load failed, using default: {e}")
+            return default
+
+    def save_history(self):
+        with open(HISTORY_FILE, "w") as f:
+            json.dump(self.state, f, indent=2)
+
+    def cleanup_stale_positions(self):
+        now = ist_now()
+        to_remove = []
+        for symbol, pos in list(self.state["active_positions"].items()):
+            try:
+                entry_time_str = pos.get("time", "")
+                if not entry_time_str:
+                    to_remove.append(symbol)
+                    continue
+                entry_dt = datetime.strptime(
+                    f"{now.year}-{entry_time_str}", "%Y-%m-%d %H:%M"
+                )
+                age_hours = (now - entry_dt).total_seconds() / 3600
+                if age_hours > 6:
+                    log.warning(f"STALE: {symbol} open {age_hours:.1f}h — force closing")
+                    to_remove.append(symbol)
+            except Exception as ex:
+                log.warning(f"Stale check error {symbol}: {ex}")
+                to_remove.append(symbol)
+        for symbol in to_remove:
+            if symbol in self.state["active_positions"]:
+                del self.state["active_positions"][symbol]
+        if to_remove:
+            self.save_history()
+
+    def can_trade(self, score=0):
+        return True
+
+    # ---- SCORING ----
+    def score_signal(self, data, symbol):
+        opens1 = data['1m']['o']; highs1 = data['1m']['h']; lows1 = data['1m']['l']; closes1 = data['1m']['c']; vols1 = data['1m']['v']
+        opens5 = data['5m']['o']; highs5 = data['5m']['h']; lows5 = data['5m']['l']; closes5 = data['5m']['c']; vols5 = data['5m']['v']
+        closes15 = data['15m']['c']
+        price_1h = data['1h']['c'][-1]
+        
+        score, direction, reasons = 0, None, []
+        is_blast = False
+        price = float(closes1[-1])
+
+        atr_val = atr_calc(highs5, lows5, closes5, ATR_PERIOD)
+        atr_pct = (atr_val / price) * 100
+        if atr_pct < 0.25:
+            return 0, None, ["LOW VOL"], 0, 0, 4
+
+        regime = market_regime(closes5, highs5, lows5)
+        reasons.append(regime)
+
+        upper, mid, lower = bollinger_calc(closes5, BB_PERIOD, BB_STD)
+        u_fast, m_fast, l_fast = bollinger_calc(closes5, BB_FAST_P, BB_FAST_S)
+
+        vol_avg = float(np.mean(vols5[-15:-1])) if len(vols5) > 15 else float(np.mean(vols5))
+        vol_now = float(vols5[-1])
+        vol_ratio = vol_now / (vol_avg + 1e-9)
+        vol_spike = vol_ratio >= VOL_MULT
+
+        atr = atr_calc(highs5, lows5, closes5, ATR_PERIOD)
+        body_now = float(closes1[-1]) - float(opens1[-1])
+        avg_body = float(np.mean([abs(float(closes1[i])-float(opens1[i])) for i in range(-6,-1)]))
+
+        # BB BLAST
+        band_widths = []
+        for i in range(-20, -1):
+            try:
+                u_i, m_i, l_i = bollinger_calc(closes5[:i], BB_PERIOD, BB_STD)
+                band_widths.append(u_i - l_i)
+            except:
+                pass
+        avg_band_width = float(np.mean(band_widths)) if band_widths else (upper - lower)
+        band_width_now = upper - lower
+        squeeze = band_width_now < avg_band_width * 0.70
+        big_candle = abs(body_now) > avg_body * 2.5
+
+        if squeeze and big_candle and vol_spike:
+            if body_now > 0 and price > mid:
+                score += 7; direction = "buy"; is_blast = True; reasons.append("BB BLAST UP")
+            elif body_now < 0 and price < mid:
+                score += 7; direction = "sell"; is_blast = True; reasons.append("BB BLAST DN")
+
+        # REGIME SPECIFIC
+        if regime in ("SIDEWAYS", "RANGING"):
+            rsi = rsi_calc(closes5, 14)
+            if not is_blast:
+                if l_fast <= price <= lower and rsi < 30:
+                    score += 5; direction = "buy"; reasons.append("DOUBLE BB + RSI<30")
+                elif upper <= price <= u_fast and rsi > 70:
+                    score += 5; direction = "sell"; reasons.append("DOUBLE BB + RSI>70")
+            cvd = 0
+            for i in range(-10, 0):
+                if closes1[i] > opens1[i]:
+                    cvd += vols1[i]
+                else:
+                    cvd -= vols1[i]
+            range_high = np.max(highs5[-10:])
+            range_low = np.min(lows5[-10:])
+            in_range = range_low < price < range_high
+            absorption = abs(cvd) < 200 and vol_spike and in_range
+
+            if cvd > 300 and not absorption:
+                score += 4; direction = direction or "buy"; reasons.append("CVD BUY")
+            elif cvd < -300 and not absorption:
+                score += 4; direction = direction or "sell"; reasons.append("CVD SELL")
+            if absorption:
+                reasons.append("ABSORPTION")
+
+        elif regime == "BULL":
+            if len(closes5) >= 30:
+                e9 = ema_calc(closes5, 9)[-1]; e21 = ema_calc(closes5, 21)[-1]; e50 = ema_calc(closes5, 50)[-1]
+                if e9 > e21 > e50:
+                    score += 5; direction = direction or "buy"; reasons.append("EMA RIBBON BULL")
+            try:
+                typical = (highs5 + lows5 + closes5) / 3
+                vwap = float(np.sum(typical * vols5) / (np.sum(vols5) + 1e-9))
+                if price < vwap * 0.998 and price > vwap * 0.995:
+                    score += 3; direction = "buy"; reasons.append("VWAP DIP")
+            except:
+                pass
+            if len(highs5) >= SR_PERIOD:
+                resistance = float(np.max(highs5[-SR_PERIOD:]))
+                support = float(np.min(lows5[-SR_PERIOD:]))
+                strong_candle = abs(closes1[-1] - opens1[-1]) > avg_body * 1.5
+                retest_res = abs(price - resistance) / price < SR_RETEST_THRESH
+                retest_sup = abs(price - support) / price < SR_RETEST_THRESH
+                if price > resistance * (1 + SR_THRESH) and strong_candle and vol_spike:
+                    score += 6; direction = direction or "buy"; reasons.append("SR BREAKOUT BULL (Strong+Vol)")
+                elif price < support * (1 - SR_THRESH) and strong_candle and vol_spike:
+                    score += 6; direction = direction or "sell"; reasons.append("SR BREAKOUT BEAR (Strong+Vol)")
+                elif retest_res and strong_candle and vol_spike:
+                    score += 4; direction = direction or "buy"; reasons.append("SR RETEST RES (Conf)")
+                elif retest_sup and strong_candle and vol_spike:
+                    score += 4; direction = direction or "sell"; reasons.append("SR RETEST SUP (Conf)")
+                elif price > resistance * (1 + SR_THRESH) and vol_spike:
+                    score += 3; direction = direction or "buy"; reasons.append("SR BREAKOUT UP (Vol)")
+                elif price < support * (1 - SR_THRESH) and vol_spike:
+                    score += 3; direction = direction or "sell"; reasons.append("SR BREAKOUT DN (Vol)")
+            if price <= lower and vol_spike:
+                score += 4; direction = direction or "buy"; reasons.append("BB DIP + VOL")
+
+        elif regime == "BEAR":
+            if len(closes5) >= 30:
+                e9 = ema_calc(closes5, 9)[-1]; e21 = ema_calc(closes5, 21)[-1]; e50 = ema_calc(closes5, 50)[-1]
+                if e9 < e21 < e50:
+                    score += 5; direction = direction or "sell"; reasons.append("EMA RIBBON BEAR")
+            try:
+                typical = (highs5 + lows5 + closes5) / 3
+                vwap = float(np.sum(typical * vols5) / (np.sum(vols5) + 1e-9))
+                if price > vwap * 1.002 and price < vwap * 1.005:
+                    score += 3; direction = "sell"; reasons.append("VWAP RALLY")
+            except:
+                pass
+            if len(highs5) >= SR_PERIOD:
+                resistance = float(np.max(highs5[-SR_PERIOD:]))
+                support = float(np.min(lows5[-SR_PERIOD:]))
+                strong_candle = abs(closes1[-1] - opens1[-1]) > avg_body * 1.5
+                retest_res = abs(price - resistance) / price < SR_RETEST_THRESH
+                retest_sup = abs(price - support) / price < SR_RETEST_THRESH
+                if price < support * (1 - SR_THRESH) and strong_candle and vol_spike:
+                    score += 6; direction = direction or "sell"; reasons.append("SR BREAKOUT BEAR (Strong+Vol)")
+                elif price > resistance * (1 + SR_THRESH) and strong_candle and vol_spike:
+                    score += 6; direction = direction or "buy"; reasons.append("SR BREAKOUT BULL (Strong+Vol)")
+                elif retest_sup and strong_candle and vol_spike:
+                    score += 4; direction = direction or "sell"; reasons.append("SR RETEST SUP (Conf)")
+                elif retest_res and strong_candle and vol_spike:
+                    score += 4; direction = direction or "buy"; reasons.append("SR RETEST RES (Conf)")
+                elif price < support * (1 - SR_THRESH) and vol_spike:
+                    score += 3; direction = direction or "sell"; reasons.append("SR BREAKOUT DN (Vol)")
+                elif price > resistance * (1 + SR_THRESH) and vol_spike:
+                    score += 3; direction = direction or "buy"; reasons.append("SR BREAKOUT UP (Vol)")
+            if price >= upper and vol_spike:
+                score += 4; direction = direction or "sell"; reasons.append("BB RALLY + VOL")
+
+        # PRICE ACTION
+        if support_resistance_range(price, highs5, lows5, 0.002):
+            engulf = detect_engulfing(opens1, closes1)
+            if engulf == "bullish":
+                score += 4; direction = direction or "buy"; reasons.append("ENGULFING @ S/R")
+            elif engulf == "bearish":
+                score += 4; direction = direction or "sell"; reasons.append("ENGULFING @ S/R")
+            pin = detect_pin_bar(opens1, highs1, lows1, closes1)
+            if pin == "bullish":
+                score += 3; direction = direction or "buy"; reasons.append("PIN BAR @ S/R")
+            elif pin == "bearish":
+                score += 3; direction = direction or "sell"; reasons.append("PIN BAR @ S/R")
+
+        if direction and vol_spike:
+            score += 2; reasons.append("VOL " + str(round(vol_ratio, 1)) + "x")
+
+        if regime == "BULL" and direction == "sell": score -= 2; reasons.append("COUNTER-TREND")
+        if regime == "BEAR" and direction == "buy": score -= 2; reasons.append("COUNTER-TREND")
+
+        # LIQUIDATION HUNTING
+        sweep_dir, sweep_level = detect_liquidation_sweep(highs5, lows5, closes5, opens5, lookback=10, threshold=0.002)
+        if sweep_dir == "bullish" and direction != "sell":
+            score += 5
+            direction = direction or "buy"
+            reasons.append(f"LIQ SWEEP BULL @ {sweep_level:.2f}")
+            if len(closes5) >= 2:
+                prev_body = closes5[-2] - opens5[-2]
+                curr_body = closes5[-1] - opens5[-1]
+                if curr_body > 0 and abs(curr_body) > abs(prev_body) * 1.2:
+                    score += 2
+                    reasons.append("REVERSAL CANDLE CONFIRM")
+        elif sweep_dir == "bearish" and direction != "buy":
+            score += 5
+            direction = direction or "sell"
+            reasons.append(f"LIQ SWEEP BEAR @ {sweep_level:.2f}")
+            if len(closes5) >= 2:
+                prev_body = closes5[-2] - opens5[-2]
+                curr_body = closes5[-1] - opens5[-1]
+                if curr_body < 0 and abs(curr_body) > abs(prev_body) * 1.2:
+                    score += 2
+                    reasons.append("REVERSAL CANDLE CONFIRM")
+
+        liq_levels = estimate_liquidation_levels(highs5, lows5, closes5, atr, lookback=LIQ_LOOKBACK)
+        swing_high = np.max(highs5[-LIQ_LOOKBACK:]) if len(highs5) >= LIQ_LOOKBACK else 0
+        for level, ltype in liq_levels:
+            if abs(price - level) / price < 0.005:
+                if ltype == "short" and direction != "sell":
+                    score += 3
+                    direction = direction or "buy"
+                    reasons.append(f"LIQ SHORT ZONE @ {level:.2f}")
+                elif ltype == "long" and direction != "buy":
+                    score += 3
+                    direction = direction or "sell"
+                    reasons.append(f"LIQ LONG ZONE @ {level:.2f}")
+                if abs(level - swing_high) > atr * LIQ_CASCADE_MULT:
+                    score += 2
+                    reasons.append("CASCADE POTENTIAL")
+
+        # MACRO TREND
+        ema20_1h = ema_calc(data['1h']['c'], 20)[-1]
+        ema50_1h = ema_calc(data['1h']['c'], 50)[-1]
+        macro_bull = price_1h > ema50_1h and ema20_1h > ema50_1h
+        macro_bear = price_1h < ema50_1h and ema20_1h < ema50_1h
+        if direction == "buy" and macro_bull:
+            score += 2; reasons.append("MACRO BULL")
+        elif direction == "sell" and macro_bear:
+            score += 2; reasons.append("MACRO BEAR")
+
+        self._last_is_blast = is_blast
+        if atr_pct > 0.8: min_score = 5
+        elif atr_pct > 0.5: min_score = 4
+        else: min_score = 3
+
+        log.info(f"SCORE: {score} | DIR: {direction} | REASONS: {', '.join(reasons)}")
+        return score, direction, reasons, upper, lower, min_score
+
+    # ---- TP/SL ----
+    def calculate_tp_sl(self, entry, direction, atr, price, lows1=None, highs1=None):
+        if direction == "buy":
+            tp = round(entry + atr * TP_MULT, 6)
+            if lows1 is not None:
+                swing_low = float(np.min(lows1[-5:]))
+                sl = round(min(swing_low - atr * 0.2, entry - atr * SL_MULT), 6)
+            else:
+                sl = round(entry - atr * SL_MULT, 6)
+        else:
+            tp = round(entry - atr * TP_MULT, 6)
+            if highs1 is not None:
+                swing_high = float(np.max(highs1[-5:]))
+                sl = round(max(swing_high + atr * 0.2, entry + atr * SL_MULT), 6)
+            else:
+                sl = round(entry + atr * SL_MULT, 6)
+        return tp, sl
+
+    # ---- POSITION MANAGEMENT ----
+    def check_positions(self, symbol, current_price, closes_1m=None, highs_1m=None, lows_1m=None):
+        if symbol not in self.state["active_positions"]:
+            return
+        pos = self.state["active_positions"][symbol]
+        side = pos["side"]
+        entry = float(pos["entry"])
+        tp = float(pos["tp"])
+        sl = float(pos["sl"])
+        margin = float(pos.get("margin", MARGIN_PER_TRADE))
+        qty = (margin * LEVERAGE) / entry
+        price = float(current_price)
+
+        if closes_1m is not None and len(closes_1m) >= TRAIL_LOOKBACK:
+            atr = atr_calc(highs_1m, lows_1m, closes_1m, 14)
+            if side == "buy":
+                recent_lows = lows_1m[-TRAIL_LOOKBACK:]
+                new_sl = float(np.min(recent_lows)) - atr * 0.2
+                if new_sl > sl:
+                    sl = new_sl
+                    self.state["active_positions"][symbol]["sl"] = round(sl, 6)
+            else:
+                recent_highs = highs_1m[-TRAIL_LOOKBACK:]
+                new_sl = float(np.max(recent_highs)) + atr * 0.2
+                if new_sl < sl:
+                    sl = new_sl
+                    self.state["active_positions"][symbol]["sl"] = round(sl, 6)
+
+        hit, reason, exit_p = False, "", price
+        if side == "buy":
+            if price >= tp: hit, reason, exit_p = True, "TP", tp
+            elif price <= sl: hit, reason, exit_p = True, "TSL", sl
+        else:
+            if price <= tp: hit, reason, exit_p = True, "TP", tp
+            elif price >= sl: hit, reason, exit_p = True, "TSL", sl
+
+        if hit:
+            if side == "buy": pnl = (exit_p - entry) * qty
+            else: pnl = (entry - exit_p) * qty
+            pnl = round(pnl, 4)
+            self.state["total_pnl"] = round(self.state["total_pnl"] + pnl, 4)
+            st = self.state["stats"]
+            st["total_trades"] += 1
+            if pnl > 0:
+                st["wins"] += 1
+                st["best_trade"] = round(max(st["best_trade"], pnl), 4)
+            else:
+                st["losses"] += 1
+                st["worst_trade"] = round(min(st["worst_trade"], pnl), 4)
+            today = ist_now().strftime("%Y-%m-%d")
+            st["daily_pnl"][today] = round(st["daily_pnl"].get(today, 0) + pnl, 4)
+            st["daily_trades"][today] = st["daily_trades"].get(today, 0) + 1
+            exit_time_str = ist_short()
+            pos_reasons = pos.get("reasons", [])
+            strategy_name = "UNKNOWN"
+            for strat_key in ["BB BLAST", "BB BOUNCE", "DOUBLE BB", "SR BREAKOUT",
+                               "VWAP", "EMA RIBBON", "ORDER FLOW", "DARVAS", "HEDGE",
+                               "ENGULFING", "PIN BAR", "INSIDE BAR", "OB", "FVG", "LIQ SWEEP",
+                               "CHoCH", "MACRO", "CVD", "LIQ SWEEP", "CASCADE"]:
+                if any(strat_key in str(r) for r in pos_reasons):
+                    strategy_name = strat_key
+                    break
+            self.state["trades"].append({
+                "time": exit_time_str,
+                "symbol": symbol,
+                "side": side.upper(),
+                "entry": round(entry, 6),
+                "exit": round(exit_p, 6),
+                "pnl": pnl,
+                "result": reason,
+                "score": pos.get("score", 0),
+                "margin": margin,
+                "strategy": strategy_name,
+                "reasons": pos_reasons,
+            })
+            del self.state["active_positions"][symbol]
+            icon = "PROFIT" if pnl > 0 else "LOSS"
+            log.info(f"{icon} {symbol} {side.upper()} | Entry:${entry} Exit:${exit_p} PnL:${pnl}")
+            self.save_history()
+
+    # ---- STRATEGY 10 ----
+    def strategy10_ema_crossover(self, symbol, opens, highs, lows, closes, vols, timeframe="5m"):
+        try:
+            if len(closes) < 30: return None, 0, []
+            e10 = ema_calc(closes, 10)[-1]
+            e20 = ema_calc(closes, 20)[-1]
+            e30 = ema_calc(closes, 30)[-1]
+            e10_prev = ema_calc(closes[:-1], 10)[-1]
+            e20_prev = ema_calc(closes[:-1], 20)[-1]
+            e30_prev = ema_calc(closes[:-1], 30)[-1]
+            bull_now = e10 > e20 > e30
+            bull_prev = e10_prev > e20_prev > e30_prev
+            bear_now = e10 < e20 < e30
+            bear_prev = e10_prev < e20_prev < e30_prev
+            fresh_bull = bull_now and not bull_prev
+            fresh_bear = bear_now and not bear_prev
+            if not fresh_bull and not fresh_bear:
+                return None, 0, []
+            body_now = float(closes[-1]) - float(opens[-1])
+            green_candle = body_now > 0
+            red_candle = body_now < 0
+            vol_now = float(vols[-1])
+            vol_prev = float(vols[-2]) if len(vols) >= 2 else vol_now
+            vol_spike = vol_now > vol_prev * 4.0
+            if fresh_bull and green_candle and vol_spike:
+                return "buy", 8, [f"S10 BULL CROSS {timeframe}"]
+            if fresh_bear and red_candle and vol_spike:
+                return "sell", 8, [f"S10 BEAR CROSS {timeframe}"]
+        except Exception as ex:
+            log.warning(f"S10 error {symbol}: {ex}")
+        return None, 0, []
+
+    def run_strategy10(self, symbol):
+        s10_key = symbol + "_S10"
+        if s10_key in self.state["active_positions"]:
+            pos = self.state["active_positions"][s10_key]
+            price = self.state["last_prices"].get(symbol, 0)
+            if price:
+                side = pos["side"]
+                entry = float(pos["entry"])
+                tp = float(pos["tp"])
+                sl = float(pos["sl"])
+                margin = float(pos.get("margin", MARGIN_PER_TRADE))
+                qty = (margin * LEVERAGE) / entry
+                hit, reason, exit_p = False, "", price
+                if side == "buy":
+                    if price >= tp: hit, reason, exit_p = True, "TP", tp
+                    elif price <= sl: hit, reason, exit_p = True, "SL", sl
+                else:
+                    if price <= tp: hit, reason, exit_p = True, "TP", tp
+                    elif price >= sl: hit, reason, exit_p = True, "SL", sl
+                if hit:
+                    pnl = round((exit_p - entry) * qty if side == "buy" else (entry - exit_p) * qty, 4)
+                    self.state["total_pnl"] = round(self.state["total_pnl"] + pnl, 4)
+                    st = self.state["stats"]
+                    st["total_trades"] += 1
+                    if pnl > 0: st["wins"] += 1
+                    else: st["losses"] += 1
+                    today = ist_now().strftime("%Y-%m-%d")
+                    st["daily_pnl"][today] = round(st["daily_pnl"].get(today, 0) + pnl, 4)
+                    st["daily_trades"][today] = st["daily_trades"].get(today, 0) + 1
+                    self.state["trades"].append({
+                        "time": ist_short(),
+                        "symbol": s10_key,
+                        "side": side.upper(),
+                        "entry": round(entry, 6),
+                        "exit": round(exit_p, 6),
+                        "pnl": pnl,
+                        "result": reason,
+                        "score": pos.get("score", 8),
+                        "margin": margin,
+                        "strategy": "EMA CROSSOVER",
+                        "reasons": pos.get("reasons", []),
+                    })
+                    del self.state["active_positions"][s10_key]
+                    icon = "PROFIT" if pnl > 0 else "LOSS"
+                    log.info(f"S10 {icon}: {s10_key} | PnL:${pnl}")
+                    self.save_history()
+            return
+        for tf in ["5m", "15m"]:
+            try:
+                limit = 80 if tf == "5m" else 60
+                result = fetch_candles(symbol, tf, limit)
+                if result is None:
+                    continue
+                opens, highs, lows, closes, vols = result
+                direction, score, reasons = self.strategy10_ema_crossover(
+                    symbol, opens, highs, lows, closes, vols, tf
+                )
+                if direction and score >= 6 and self.can_trade(score):
+                    price = float(closes[-1])
+                    av = atr_calc(highs, lows, closes, ATR_PERIOD)
+                    if direction == "buy":
+                        tp = round(price + av * 2.5, 6)
+                        swing_low = float(np.min(lows[-10:]))
+                        sl = round(min(swing_low - av * 0.2, price - av * 0.8), 6)
+                    else:
+                        tp = round(price - av * 2.5, 6)
+                        swing_high = float(np.max(highs[-10:]))
+                        sl = round(max(swing_high + av * 0.2, price + av * 0.8), 6)
+                    self.state["active_positions"][s10_key] = {
+                        "side": direction,
+                        "entry": price,
+                        "tp": tp,
+                        "sl": sl,
+                        "margin": MARGIN_PER_TRADE,
+                        "score": score,
+                        "reasons": reasons,
+                        "time": ist_short(),
+                        "strategy10": True,
+                        "timeframe": tf,
+                    }
+                    self.state["last_prices"][symbol] = price
+                    self.save_history()
+                    log.info(f"S10 NEW TRADE: {s10_key} {direction.upper()} [{tf}] | Score:{score} | TP:{tp} | SL:{sl}")
+                    break
+            except Exception as ex:
+                log.warning(f"S10 run error {symbol} [{tf}]: {ex}")
+
+    def check_hedge_positions(self):
+        pass
+
+    # ---- Darvas ----
+    def darvas_box_strategy(self, opens, highs, lows, closes, vols, box_period=10, vol_period=15):
+        if len(closes) < box_period + vol_period:
+            return None, None, None, None, []
+        closes = closes.astype(float)
+        highs = highs.astype(float)
+        lows = lows.astype(float)
+        vols = vols.astype(float)
+        box_highs = highs[-box_period:]
+        box_lows = lows[-box_period:]
+        resistance = float(np.max(box_highs))
+        support = float(np.min(box_lows))
+        current_close = float(closes[-1])
+        current_volume = float(vols[-1])
+        vol_ma = float(np.mean(vols[-vol_period:]))
+        breakout_up = current_close > resistance
+        breakout_down = current_close < support
+        trail_sl = None
+        signal = None
+        reasons = []
+        if breakout_up:
+            signal = "buy"
+            trail_sl = round(support, 6)
+            reasons = ["DARVAS", "Break $" + str(round(resistance, 4))]
+        elif breakout_down:
+            signal = "sell"
+            trail_sl = round(resistance, 6)
+            reasons = ["DARVAS", "Break $" + str(round(support, 4))]
+        return signal, round(resistance, 6), round(support, 6), trail_sl, reasons
+
+    # ---- MAIN SCAN ----
+    def scan_market(self):
+        log.info("=== Starting market scan ===")
+        self.dashboard = []
+        self.cleanup_stale_positions()
+        self.check_hedge_positions()
+
+        for sym10 in SYMBOLS:
+            try:
+                self.run_strategy10(sym10)
+            except Exception as ex:
+                log.warning(f"Strategy 10 outer error {sym10}: {ex}")
+
+        symbol_data = {}
+        with ThreadPoolExecutor(max_workers=len(SYMBOLS)) as executor:
+            future_to_symbol = {executor.submit(fetch_symbol_data_enhanced, sym): sym for sym in SYMBOLS}
+            for future in as_completed(future_to_symbol):
+                sym = future_to_symbol[future]
+                try:
+                    data = future.result()
+                    if data:
+                        symbol_data[sym] = data
+                    else:
+                        log.warning(f"Failed to fetch data for {sym}")
+                except Exception as e:
+                    log.error(f"Error fetching {sym}: {e}")
+
+        for symbol in SYMBOLS:
+            try:
+                if symbol not in symbol_data:
+                    self.dashboard.append({"symbol": symbol, "price": self.state["last_prices"].get(symbol, 0),
+                                           "signal": "SCANNING", "score": 0,
+                                           "entry": None, "tp": None, "sl": None,
+                                           "reasons": ["Data unavailable"]})
+                    continue
+
+                data = symbol_data[symbol]
+                current_price = float(data['1m']['c'][-1])
+                self.check_positions(symbol, current_price, data['1m']['c'], data['1m']['h'], data['1m']['l'])
+
+                price = round(float(data['1m']['c'][-1]), 6)
+                self.state["last_prices"][symbol] = price
+                if "last_prices_history" not in self.state:
+                    self.state["last_prices_history"] = {}
+                hist = self.state["last_prices_history"].get(symbol, [])
+                hist.append(price)
+                self.state["last_prices_history"][symbol] = hist[-20:]
+
+                if symbol in self.state["active_positions"]:
+                    pos = self.state["active_positions"][symbol]
+                    self.dashboard.append({"symbol": symbol, "price": price,
+                                           "signal": "HOLDING " + pos["side"].upper(),
+                                           "score": pos.get("score", 0),
+                                           "entry": pos["entry"],
+                                           "tp": pos["tp"],
+                                           "sl": pos["sl"],
+                                           "reasons": pos.get("reasons", [])})
+                    continue
+
+                score, direction, reasons, upper, lower, adaptive_min = self.score_signal(data, symbol)
+
+                log.info(f"{symbol} | ${price} | Score:{score}/10 | Regime:{reasons[0] if reasons else '?'} | Min:{adaptive_min}")
+
+                # Darvas
+                darvas_sig, box_top, box_bot, darvas_sl, darvas_reasons = self.darvas_box_strategy(
+                    data['5m']['o'], data['5m']['h'], data['5m']['l'], data['5m']['c'], data['5m']['v']
+                )
+                if darvas_sig and darvas_sig == direction:
+                    score = min(score + 2, 10)
+                    reasons = reasons + darvas_reasons
+                    log.info(f"DARVAS CONFIRM {symbol} {darvas_sig.upper()}")
+                elif darvas_sig and not direction and darvas_sl:
+                    direction = darvas_sig
+                    score = max(score, 5)
+                    reasons = darvas_reasons
+                    log.info(f"DARVAS SIGNAL {symbol} {darvas_sig.upper()}")
+
+                if direction and score >= adaptive_min and self.can_trade(score):
+                    is_blast = getattr(self, "_last_is_blast", False)
+                    margin = MARGIN_BLAST if is_blast else MARGIN_PER_TRADE
+                    av = atr_calc(data['5m']['h'], data['5m']['l'], data['5m']['c'], ATR_PERIOD)
+
+                    if direction == "buy":
+                        tp, sl = self.calculate_tp_sl(price, direction, av, price, data['1m']['l'], data['1m']['h'])
+                    else:
+                        tp, sl = self.calculate_tp_sl(price, direction, av, price, data['1m']['l'], data['1m']['h'])
+
+                    self.state["active_positions"][symbol] = {
+                        "side": direction,
+                        "entry": price,
+                        "tp": tp,
+                        "sl": sl,
+                        "margin": margin,
+                        "score": score,
+                        "reasons": reasons,
+                        "time": ist_short(),
+                    }
+                    self.save_history()
+                    log.info(f"NEW TRADE: {symbol} {direction.upper()} | Score:{score} | Margin:${margin} | TP:{tp} | SL:{sl}")
+
+                # Dashboard for S10
+                s10_key = symbol + "_S10"
+                if s10_key in self.state["active_positions"]:
+                    sp = self.state["active_positions"][s10_key]
+                    self.dashboard.append({"symbol": s10_key, "price": price,
+                                           "signal": "S10 " + sp["side"].upper(),
+                                           "score": sp.get("score", 8),
+                                           "entry": sp["entry"],
+                                           "tp": sp["tp"],
+                                           "sl": sp["sl"],
+                                           "margin": sp.get("margin", MARGIN_PER_TRADE),
+                                           "reasons": sp.get("reasons", [])})
+
+                if symbol in self.state["active_positions"]:
+                    pos = self.state["active_positions"][symbol]
+                    self.dashboard.append({"symbol": symbol, "price": price,
+                                           "signal": "HOLDING " + pos["side"].upper(),
+                                           "score": pos.get("score", score),
+                                           "entry": pos["entry"],
+                                           "tp": pos["tp"],
+                                           "sl": pos["sl"],
+                                           "margin": pos.get("margin", MARGIN_PER_TRADE),
+                                           "reasons": pos.get("reasons", reasons)})
+                else:
+                    self.dashboard.append({"symbol": symbol,
+                                           "price": price,
+                                           "signal": direction.upper() + " " + str(score) + "/10" if direction else "SCANNING",
+                                           "score": score,
+                                           "entry": None,
+                                           "tp": None,
+                                           "sl": None,
+                                           "reasons": reasons})
+            except Exception as e:
+                log.error(f"Error {symbol}: {e}")
+                self.dashboard.append({"symbol": symbol, "price": 0, "signal": "ERROR",
+                                       "score": 0, "entry": 0, "tp": None, "sl": None, "reasons": [str(e)]})
+
+        self.save_history()
+        self.build_dashboard()
+        log.info(f"Scan complete. Next scan in {SCAN_INTERVAL//60} minutes.")
+
+    # ---- FULL DASHBOARD ----
+    def build_dashboard(self):
+        state = self.state
+        stats = state.get("stats", {})
+        trades = state.get("trades", [])
+
+        total_pnl = round(state.get("total_pnl", 0.0), 2)
+        wallet = round(INITIAL_CAPITAL + total_pnl, 2)
+        total_t = stats.get("total_trades", 0)
+        wins = stats.get("wins", 0)
+        losses = stats.get("losses", 0)
+        win_rate = round(wins / total_t * 100, 1) if total_t > 0 else 0.0
+        best = round(stats.get("best_trade", 0.0), 2)
+        worst = round(stats.get("worst_trade", 0.0), 2)
+        pnl_pct = round((total_pnl / INITIAL_CAPITAL) * 100, 2)
+        now_str = ist_now().strftime("%Y-%m-%d %I:%M:%S %p")
+
+        today = ist_now().strftime("%Y-%m-%d")
+        today_pnl = round(stats.get("daily_pnl", {}).get(today, 0.0), 2)
+        today_trades = stats.get("daily_trades", {}).get(today, 0)
+
+        open_pos = len(state.get("active_positions", {}))
+        trading_ok = True
+
+        daily_pnl_data = stats.get("daily_pnl", {})
+        sorted_days = sorted(daily_pnl_data.items())[-14:]
+        chart_labels = json.dumps([d[0][5:] for d in sorted_days])
+        chart_values = json.dumps([round(d[1], 2) for d in sorted_days])
+        chart_colors = json.dumps([
+            "rgba(0,230,118,0.85)" if d[1] >= 0 else "rgba(255,23,68,0.85)"
+            for d in sorted_days
+        ])
+
+        # ---- MONITOR ROWS ----
+        monitor_rows = ""
+        for d in self.dashboard:
+            sym = d.get("symbol", "")
+            clean = sym.replace("/", "").lower()
+            sig = d.get("signal", "SCANNING")
+            score = int(d.get("score", 0))
+            reasons = ", ".join(d.get("reasons", [])) or "Waiting..."
+            tp_val = "$" + str(d["tp"]) if d.get("tp") else "-"
+            sl_val = "$" + str(d["sl"]) if d.get("sl") else "-"
+            entry_val = "$" + str(d["entry"]) if d.get("entry") and "HOLD" in sig else "-"
+
+            if "HOLD" in sig:
+                pill = "<span class='pill-hold'>" + sig + "</span>"
+            elif "BUY" in sig:
+                pill = "<span class='pill-buy'>" + sig + "</span>"
+            elif "SELL" in sig:
+                pill = "<span class='pill-sell'>" + sig + "</span>"
+            else:
+                pill = "<span class='pill-scan'>SCANNING</span>"
+
+            dots = ""
+            for i in range(10):
+                dots += "<span class='dotf'></span>" if i < score else "<span class='dot'></span>"
+
+            okx_sym = sym.replace("/", "-").lower() + "-swap"
+            okx_url = "https://www.okx.com/trade-swap/" + okx_sym
+            monitor_rows += (
+                "<div class='monitor-card'>"
+                "<div class='monitor-top'>"
+                "<div class='monitor-sym'>" + sym + "</div>" "<div style='font-size:9px;color:var(--muted);margin-top:1px;'>OKX ↗</div>"
+                "<span id='p-" + clean + "' class='monitor-price'>$" + str(d.get('price', '--')) + "</span>"
+                "</div>"
+                "<div class='monitor-row'>"
+                "<div><span class='monitor-label'>24h </span><span id='c-" + clean + "' class='monitor-val'>--</span></div>"
+                "<div>" + pill + "</div>"
+                "<div><span class='monitor-label'>Score </span><span class='monitor-val' style='color:var(--green);'>" + str(score) + "/10</span></div>"
+                "</div>"
+                "<div class='monitor-bottom'>"
+                + (
+                    "<div><div class='monitor-label'>Entry</div><div class='monitor-val' style='color:var(--amber);'>" + entry_val + "</div></div>"
+                    "<div><div class='monitor-label'>Take Profit</div><div class='monitor-val' style='color:var(--green);'>" + tp_val + "</div></div>"
+                    "<div><div class='monitor-label'>Stop Loss</div><div class='monitor-val' style='color:var(--red);'>" + sl_val + "</div></div>"
+                    "<div><div class='monitor-label'>Margin</div><div class='monitor-val' style='color:var(--amber);font-size:11px;font-weight:800;'>" + ("$" + str(d.get("margin", MARGIN_PER_TRADE)) if "HOLD" in sig else "-") + "</div></div>"
+                    if "HOLD" in sig else
+                    "<div style='color:var(--muted);font-size:10px;'>⚡ " + reasons + "</div>"
+                ) +
+                "<div class='dots'>" + dots + "</div>"
+                "</div>"
+                "<div style='margin-top:10px;padding-top:8px;border-top:1px solid #162035;text-align:center;'>"
+                "<a href='" + okx_url + "' target='_blank' style='display:inline-block;background:rgba(0,230,118,.12);color:#00e676;border:1px solid rgba(0,230,118,.3);font-size:11px;font-weight:700;padding:7px 20px;border-radius:8px;text-decoration:none;'>&#x1F4CA; View OKX Chart</a>"
+                "</div>"
+                "</div>"
+            )
+
+        # ---- OPEN POSITIONS ----
+        open_positions_html = ""
+        for d in self.dashboard:
+            if "HOLD" not in d.get("signal", ""):
+                continue
+            sym = d.get("symbol", "")
+            clean = sym.replace("/", "").lower()
+            side = "BUY" if "BUY" in d.get("signal", "") else "SELL"
+            side_cls = "buy" if side == "BUY" else "sell"
+            side_pill = f"<span class='pos-side side-{side_cls}'>{side}</span>"
+            open_positions_html += f"""
+            <div class='pos-card {side_cls}'>
+                <div class='pos-card-top'>
+                    <div><span class='pos-pair'>{sym}</span> {side_pill}</div>
+                    <span class='pos-live-price' id='pp-{clean}'>${d.get('price', '--')}</span>
+                </div>
+                <div class='pos-details'>
+                    <div><div class='pos-d-label'>Entry</div><div class='pos-d-val' style='color:var(--yellow);'>${d.get('entry', '--')}</div></div>
+                    <div><div class='pos-d-label'>TP</div><div class='pos-d-val' style='color:var(--green);'>${d.get('tp', '--')}</div></div>
+                    <div><div class='pos-d-label'>SL</div><div class='pos-d-val' style='color:var(--red);'>${d.get('sl', '--')}</div></div>
+                </div>
+                <div class='pos-footer'>
+                    <span class='pos-margin-tag'>💰 ${d.get('margin', 100)}</span>
+                    <span class='pos-score-tag'>Score {d.get('score',0)}/10</span>
+                    <span class='pos-reasons'>{', '.join(d.get('reasons', []))[:40]}</span>
+                </div>
+            </div>
+            """
+        if not open_positions_html:
+            open_positions_html = "<div class='empty-state'><div class='empty-icon'>📊</div><div class='empty-text'>No open positions</div></div>"
+
+        # ---- HISTORY ----
+        history_rows = ""
+        for t in reversed(trades[-50:]):
+            pv = float(t.get("pnl", 0))
+            pc = "pos" if pv >= 0 else "neg"
+            icon = "TP" if t.get("result", "") == "TP" else "SL"
+            badge = "pill-buy" if t.get("side", "") == "BUY" else "pill-sell"
+            prefix = "+" if pv >= 0 else ""
+            history_rows += f"""
+            <div class='trade-card'>
+                <div class='trade-top'>
+                    <div style='display:flex;align-items:center;gap:8px;'>
+                        <div class='trade-pair'>{t.get('symbol','')}</div>
+                        <span class='{badge}'>{t.get('side','')}</span>
+                    </div>
+                    <div class='trade-pnl {pc}'>{prefix}${round(pv,2)}</div>
+                </div>
+                <div class='trade-row'>
+                    <div class='trade-item'><div class='trade-item-label'>Time</div><div class='trade-item-val'>{t.get('time','')}</div></div>
+                    <div class='trade-item'><div class='trade-item-label'>Entry</div><div class='trade-item-val'>${t.get('entry','')}</div></div>
+                    <div class='trade-item'><div class='trade-item-label'>Exit</div><div class='trade-item-val'>${t.get('exit','')}</div></div>
+                </div>
+                <div class='trade-meta'>
+                    <span class='trade-result'>{'🎯 TP' if icon=='TP' else '🛑 SL'}</span>
+                    <span class='trade-score'>Score: {t.get('score','-')}/10</span>
+                    <span class='trade-margin'>Margin: ${t.get('margin',100)}</span>
+                </div>
+            </div>
+            """
+        if not history_rows:
+            history_rows = "<div class='trade-card' style='text-align:center;color:var(--muted);'>No trades yet — bot is scanning...</div>"
+
+        # ---- STRATEGY TRACKER ----
+        STRATEGY_NAMES = [
+            "BB BLAST", "BB BOUNCE", "DOUBLE BB", "SR BREAKOUT",
+            "VWAP", "EMA RIBBON", "ORDER FLOW", "DARVAS", "HEDGE",
+            "EMA CROSSOVER", "ENGULFING", "PIN BAR", "INSIDE BAR",
+            "OB", "FVG", "LIQ SWEEP", "CHoCH", "MACRO", "CVD", "CASCADE"
+        ]
+        strat_stats = {s: {"wins": 0, "losses": 0, "total": 0, "pnl": 0.0} for s in STRATEGY_NAMES}
+        for t in trades:
+            strat = t.get("strategy", "UNKNOWN")
+            pnl_t = float(t.get("pnl", 0))
+            matched = "UNKNOWN"
+            for s in STRATEGY_NAMES:
+                if s in str(strat) or s in str(t.get("reasons", [])):
+                    matched = s
+                    break
+            if matched in strat_stats:
+                strat_stats[matched]["total"] += 1
+                strat_stats[matched]["pnl"] += pnl_t
+                if pnl_t > 0:
+                    strat_stats[matched]["wins"] += 1
+                else:
+                    strat_stats[matched]["losses"] += 1
+
+        strat_html = ""
+        for sname, ss in strat_stats.items():
+            if ss["total"] == 0:
+                strat_html += f"""
+                <div class='strat-card'>
+                    <div class='strat-top'><span class='strat-name'>{sname}</span><span class='strat-badge neutral'>No trades</span></div>
+                    <div class='strat-sub'>Waiting for first signal...</div>
+                </div>
+                """
+                continue
+            wr = round(ss["wins"] / ss["total"] * 100, 1)
+            total_pnl_s = round(ss["pnl"], 2)
+            wr_cls = "good" if wr >= 55 else "warn" if wr >= 45 else "bad"
+            pnl_cls = "win" if total_pnl_s >= 0 else "loss"
+            bar_w = str(int(wr)) + "%"
+            strat_html += f"""
+            <div class='strat-card'>
+                <div class='strat-top'>
+                    <span class='strat-name'>{sname}</span>
+                    <span class='strat-pnl {pnl_cls}'>{"+" if total_pnl_s>=0 else ""}${total_pnl_s}</span>
+                </div>
+                <div class='strat-bar-bg'><div class='strat-bar {wr_cls}' style='width:{bar_w}'></div></div>
+                <div class='strat-stats'>
+                    <span class='strat-wr {wr_cls}'>{wr}% WR</span>
+                    <span class='strat-detail'>{ss['wins']}W / {ss['losses']}L / {ss['total']} trades</span>
+                </div>
+            </div>
+            """
+
+        risk_badge_text = "TRADING ACTIVE" if trading_ok else "LIMIT REACHED"
+        risk_badge_cls = "badge-ok" if trading_ok else "badge-limit"
+
+        css = """
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        :root{--bg:#0b0e11;--bg1:#13161b;--bg2:#1a1d24;--bg3:#22262f;--line:#2b2f3a;--text:#eaecef;--muted:#848e9c;--green:#0ecb81;--red:#f6465d;--yellow:#f0b90b;--blue:#1890ff;--white:#fff;--font:'Inter',sans-serif;--mono:'Courier New',monospace;}
+        body{background:var(--bg);color:var(--text);font-family:var(--font);padding:12px;min-height:100vh;}
+        ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px;}
+        nav{background:var(--bg1);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;border-radius:8px;margin-bottom:12px;}
+        .nav-logo{display:flex;align-items:center;gap:8px;}
+        .nav-logo-icon{background:linear-gradient(135deg,#f0b90b,#f8d12f);padding:4px 8px;border-radius:6px;}
+        .nav-logo-text{font-weight:700;font-size:16px;}
+        .badge-ok{font-size:10px;color:var(--green);background:rgba(14,203,129,.1);padding:4px 10px;border-radius:12px;border:1px solid rgba(14,203,129,.2);}
+        .badge-limit{font-size:10px;color:var(--red);background:rgba(246,70,93,.1);padding:4px 10px;border-radius:12px;border:1px solid rgba(246,70,93,.2);}
+        .tabs{display:flex;gap:4px;background:var(--bg1);padding:8px;border-radius:8px;margin-bottom:12px;overflow-x:auto;}
+        .tab{padding:8px 16px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);border-radius:6px;transition:all .2s;white-space:nowrap;}
+        .tab.active{background:var(--bg3);color:var(--yellow);}
+        .panel{display:none;}
+        .panel.active{display:block;}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px;}
+        .stat-box{background:var(--bg2);border:1px solid var(--line);padding:12px;border-radius:8px;}
+        .stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:600;}
+        .stat-val{font-size:18px;font-weight:800;font-family:var(--mono);margin-top:2px;}
+        .green{color:var(--green);}.red{color:var(--red);}.yellow{color:var(--yellow);}
+        .chart-box{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px;}
+        .chart-box-title{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:8px;}
+        .monitor-card{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;}
+        .monitor-top{display:flex;justify-content:space-between;align-items:center;}
+        .monitor-sym{font-weight:700;font-size:14px;}
+        .monitor-price{font-family:var(--mono);font-size:14px;font-weight:700;}
+        .monitor-row{display:flex;justify-content:space-between;align-items:center;margin:6px 0;}
+        .monitor-label{font-size:9px;color:var(--muted);}
+        .monitor-val{font-family:var(--mono);font-size:11px;}
+        .monitor-bottom{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;border-top:1px solid var(--line);padding-top:6px;}
+        .pill-buy,.pill-sell,.pill-hold,.pill-scan{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;}
+        .pill-buy{background:rgba(14,203,129,.15);color:var(--green);border:1px solid rgba(14,203,129,.2);}
+        .pill-sell{background:rgba(246,70,93,.15);color:var(--red);border:1px solid rgba(246,70,93,.2);}
+        .pill-hold{background:rgba(24,144,255,.15);color:var(--blue);border:1px solid rgba(24,144,255,.2);}
+        .pill-scan{background:rgba(240,185,11,.15);color:var(--yellow);border:1px solid rgba(240,185,11,.2);}
+        .dotf,.dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:2px;}
+        .dotf{background:var(--green);}.dot{background:var(--line);}
+        .pos-card{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;position:relative;overflow:hidden;}
+        .pos-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+        .pos-card.buy::before{background:var(--green);}
+        .pos-card.sell::before{background:var(--red);}
+        .pos-card-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+        .pos-pair{font-weight:700;font-size:14px;}
+        .pos-side{font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;}
+        .side-buy{background:rgba(14,203,129,.15);color:var(--green);border:1px solid rgba(14,203,129,.2);}
+        .side-sell{background:rgba(246,70,93,.15);color:var(--red);border:1px solid rgba(246,70,93,.2);}
+        .pos-details{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:var(--bg3);border-radius:6px;padding:8px;margin-bottom:8px;}
+        .pos-d-label{font-size:8px;color:var(--muted);text-transform:uppercase;}
+        .pos-d-val{font-family:var(--mono);font-size:11px;font-weight:700;}
+        .pos-footer{display:flex;gap:6px;flex-wrap:wrap;}
+        .pos-margin-tag{font-size:9px;font-weight:700;color:var(--yellow);background:rgba(240,185,11,.1);padding:2px 8px;border-radius:4px;}
+        .pos-score-tag{font-size:9px;color:var(--muted);background:var(--bg3);padding:2px 8px;border-radius:4px;}
+        .pos-reasons{font-size:9px;color:var(--muted);margin-left:auto;}
+        .trade-card{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:6px;}
+        .trade-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+        .trade-pair{font-weight:700;font-size:13px;}
+        .trade-pnl{font-family:var(--mono);font-weight:800;font-size:14px;}
+        .trade-pnl.pos{color:var(--green);}.trade-pnl.neg{color:var(--red);}
+        .trade-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;background:var(--bg3);border-radius:4px;padding:6px;margin:4px 0;}
+        .trade-item-label{font-size:8px;color:var(--muted);text-transform:uppercase;}
+        .trade-item-val{font-family:var(--mono);font-size:10px;}
+        .trade-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;font-size:9px;}
+        .trade-result{font-weight:600;}
+        .trade-score,.trade-margin{color:var(--muted);background:var(--bg3);padding:2px 6px;border-radius:4px;}
+        .strat-card{background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:8px;}
+        .strat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+        .strat-name{font-weight:700;font-size:13px;}
+        .strat-pnl{font-family:var(--mono);font-weight:800;font-size:13px;}
+        .strat-pnl.win{color:var(--green);}.strat-pnl.loss{color:var(--red);}
+        .strat-bar-bg{background:var(--bg3);border-radius:4px;height:4px;margin-bottom:6px;overflow:hidden;}
+        .strat-bar{height:100%;border-radius:4px;transition:width .5s;}
+        .strat-bar.good{background:var(--green);}.strat-bar.warn{background:var(--yellow);}.strat-bar.bad{background:var(--red);}
+        .strat-stats{display:flex;justify-content:space-between;align-items:center;}
+        .strat-wr{font-size:12px;font-weight:800;font-family:var(--mono);}
+        .strat-wr.good{color:var(--green);}.strat-wr.warn{color:var(--yellow);}.strat-wr.bad{color:var(--red);}
+        .strat-detail{font-size:9px;color:var(--muted);}
+        .strat-badge{font-size:9px;padding:2px 8px;border-radius:4px;background:rgba(139,146,217,.1);color:var(--muted);}
+        .strat-sub{font-size:9px;color:var(--muted2);}
+        .empty-state{text-align:center;padding:30px;color:var(--muted2);}
+        .empty-icon{font-size:24px;}
+        footer{text-align:center;color:var(--muted2);font-size:10px;padding:16px;border-top:1px solid var(--line);margin-top:12px;}
+        """
+
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>WhaleTrader Ultimate</title>
+        <style>{css}</style>
+        </head>
+        <body>
+        <nav>
+            <div class="nav-logo"><span class="nav-logo-icon">🐋</span><span class="nav-logo-text">WhaleTrader Ultimate</span></div>
+            <div><span class="{risk_badge_cls}">{risk_badge_text}</span></div>
+        </nav>
+        <div class="tabs">
+            <span class="tab active" onclick="showTab(0)">📊 Overview</span>
+            <span class="tab" onclick="showTab(1)">📈 Markets</span>
+            <span class="tab" onclick="showTab(2)">💼 Positions ({open_pos})</span>
+            <span class="tab" onclick="showTab(3)">📋 History</span>
+            <span class="tab" onclick="showTab(4)">🧠 Strategies</span>
+        </div>
+
+        <div id="tab0" class="panel active">
+            <div class="overview-header" style="background:linear-gradient(135deg,#1a1d24,#22262f);padding:16px;border-radius:10px;margin-bottom:10px;">
+                <div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Total Account Value</div>
+                <div style="font-size:26px;font-weight:800;font-family:var(--mono);">${wallet}</div>
+                <div style="font-size:13px;font-weight:600;color:{'var(--green)' if total_pnl>=0 else 'var(--red)'};">{"+" if total_pnl>=0 else ""}${total_pnl} ({pnl_pct}%) All Time</div>
+                <div style="font-size:9px;color:var(--muted2);margin-top:4px;">Sync: {now_str}</div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-box"><div class="stat-label">Win Rate</div><div class="stat-val {'green' if win_rate>=55 else 'yellow' if win_rate>=45 else 'red'}">{win_rate}%</div><div class="stat-label">{wins}W / {losses}L / {total_t} total</div></div>
+                <div class="stat-box"><div class="stat-label">Today P&L</div><div class="stat-val {'green' if today_pnl>=0 else 'red'}">{"+" if today_pnl>=0 else ""}${today_pnl}</div><div class="stat-label">{today_trades} trades today</div></div>
+                <div class="stat-box"><div class="stat-label">Best Trade</div><div class="stat-val green">+${best}</div><div class="stat-label">All time high</div></div>
+                <div class="stat-box"><div class="stat-label">Worst Trade</div><div class="stat-val red">${worst}</div><div class="stat-label">Max drawdown</div></div>
+                <div class="stat-box"><div class="stat-label">Positions</div><div class="stat-val yellow">{open_pos}/{MAX_POSITIONS}</div><div class="stat-label">Max allowed</div></div>
+                <div class="stat-box"><div class="stat-label">Strategies</div><div class="stat-val yellow">18+</div><div class="stat-label">Active / 10x Lev</div></div>
+            </div>
+            <div class="chart-box">
+                <div class="chart-box-title">Daily P&L — Last 14 Days</div>
+                <canvas id="pnlChart" style="max-height:140px;width:100%;"></canvas>
+            </div>
+        </div>
+
+        <div id="tab1" class="panel">{monitor_rows}</div>
+        <div id="tab2" class="panel">{open_positions_html}</div>
+        <div id="tab3" class="panel">{history_rows}</div>
+        <div id="tab4" class="panel"><div style='padding:4px 0 12px;font-size:11px;color:var(--muted);'>📊 Performance tracked from trade history</div>{strat_html}</div>
+
+        <footer>WhaleTrader Ultimate &middot; 15-min auto-sync &middot; Paper Trading &middot; $1,000 Capital</footer>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+        <script>
+            function showTab(i){{ document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',i===j)); document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',i===j)); }}
+            function openChart(sym){{ var map={{'BTCUSDT':'BTC','ETHUSDT':'ETH','SOLUSDT':'SOL','BNBUSDT':'BNB','XRPUSDT':'XRP','DOGEUSDT':'DOGE'}}; var base=map[sym]||sym.replace('USDT',''); window.open('https://www.tradingview.com/chart/?symbol=OKX:'+base+'USDT&interval=1','_blank'); }}
+            var ctx=document.getElementById('pnlChart').getContext('2d');
+            new Chart(ctx,{{type:'bar',data:{{labels:{chart_labels},datasets:[{{data:{chart_values},backgroundColor:{chart_colors},borderRadius:4,borderSkipped:false}}]}},options:{{responsive:true,plugins:{{legend:{{display:false}}}},scales:{{x:{{grid:{{display:false}},ticks:{{color:'#848e9c',font:{{size:9}}}}}},y:{{grid:{{color:'rgba(255,255,255,0.04)'}},ticks:{{color:'#848e9c',font:{{size:9}},callback:v=>'$'+v}}}}}}}}}});
+            var syms=['btcusdt','ethusdt','solusdt','bnbusdt','xrpusdt','dogeusdt'];
+            (function connectWS(){{ var ws=new WebSocket('wss://stream.binance.com:9443/ws/'+syms.map(s=>s+'@ticker').join('/')); ws.onmessage=function(e){{ var d=JSON.parse(e.data); var s=d.s.toLowerCase(); var pe=document.getElementById('p-'+s); var pp=document.getElementById('pp-'+s); var ce=document.getElementById('c-'+s); if(!pe) return; var price=parseFloat(d.c); var chg=parseFloat(d.P); var priceStr=price<1?'$'+price.toFixed(5):'$'+price.toLocaleString('en',{{minimumFractionDigits:2,maximumFractionDigits:2}}); pe.textContent=priceStr; if(pp) pp.textContent=priceStr; pe.style.color=chg>=0?'#0ecb81':'#f6465d'; setTimeout(()=>pe.style.color='',500); if(ce){{ ce.textContent=(chg>=0?'+':'')+chg.toFixed(2)+'%'; ce.className='market-chg '+(chg>=0?'up':'dn'); }} }}; ws.onclose=function(){{ setTimeout(connectWS,3000); }}; }})();
+        </script>
+        </body>
+        </html>
+        """
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(html)
+        log.info("Dashboard saved — index.html")
+
+    # ---- MAIN LOOP ----
+    def run(self):
+        log.info(f"WhaleTrader Pro (Liquidation Hunting) – Scanning every {SCAN_INTERVAL//60} minutes.")
+        while True:
+            try:
+                self.scan_market()
+                time.sleep(SCAN_INTERVAL)
+            except KeyboardInterrupt:
+                log.info("Bot stopped by user. Exiting...")
+                break
+            except Exception as e:
+                log.error(f"Unexpected error: {e}")
+                time.sleep(60)
+
+if __name__ == "__main__":
+    engine = WhaleEngine()
+    engine.run()
